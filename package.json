@@ -17,7 +17,7 @@
     "build": "react-scripts build",
     "test": "jest",
     "eject": "react-scripts eject",
-    "prepare": "husky install"
+    "prepare": "husky init"
   },
   "eslintConfig": {
     "extends": [
