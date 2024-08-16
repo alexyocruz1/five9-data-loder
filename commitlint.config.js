@@ -22,6 +22,7 @@ const generalRules = {
     'scope-case': [2, 'always', ['kebab-case', 'camel-case']],
     'subject-case': [2, 'always', 'sentence-case'],
     'scope-enum': [2, 'always', [scope]],
+    'header-max-length': [2, 'always', 150],
   },
 };
 
