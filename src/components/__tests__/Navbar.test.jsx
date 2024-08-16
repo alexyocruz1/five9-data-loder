@@ -41,7 +41,6 @@ describe('NavbarComponent', () => {
         <NavbarComponent />
       </Router>
     );
-    // Open the dropdown menu
     fireEvent.click(screen.getByText(/Contacts/i));
     const dropdownItem = screen.getByText(/Get all contacts/i);
     expect(dropdownItem).toBeInTheDocument();

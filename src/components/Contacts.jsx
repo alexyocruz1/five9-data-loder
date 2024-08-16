@@ -17,8 +17,6 @@ const Contacts = () => {
 
   const fetchAllContacts = async (PassedUsername, PassedPassword, rememberUsername) => {
     setLoading(true);
-
-    console.log(apiRoute);
     try {
       const response = await axios.post(`${apiRoute}/api/contacts/getContactRecordsAll/`, {
         username: PassedUsername,
