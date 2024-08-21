@@ -5,6 +5,8 @@ import Contacts from './components/Contacts';
 import Home from './components/Home';
 import NavbarComponent from './components/Navbar';
 import { AppProvider } from './context/AppContext';
+import GeneralInfo from './components/Users/GeneralInfo';
+import AddSkillUser from './components/Skills/AddSkillUser';
 
 const App = () => {
   return (
@@ -15,6 +17,8 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/contacts" element={<Contacts />} />
+            <Route path="/users-general-info" element={<GeneralInfo />} />
+            <Route path="/add-skills-to-user" element={<AddSkillUser />} />
           </Routes>
         </Layout>
       </Router>

@@ -24,6 +24,7 @@ const Contacts = () => {
       });
       setContacts(transformResponse(response));
       setUsername(rememberUsername ? PassedUsername : '');
+      setError(null);
 
       handleLoginSuccess();
     } catch (error) {
@@ -47,11 +48,16 @@ const Contacts = () => {
     setShowErrorToast(true);
   };
 
+  const booleanCellRenderer = ({ cell }) => {
+    return cell.getValue() ? 'Yes' : 'No';
+  };
+
   const columns = useMemo(() => {
     if (contacts && contacts.length > 0) {
       return Object.keys(contacts[0]).map((key) => ({
         accessorKey: key,
         header: key.replace(/_/g, ' ').toUpperCase(),
+        Cell: typeof contacts[0][key] === 'boolean' ? booleanCellRenderer : undefined,
       }));
     }
     return [];
@@ -73,7 +79,9 @@ const Contacts = () => {
         </Col>
       </Row>
       {error && <p>{error}</p>}
-      <MaterialReactTable table={table} />
+      <div className='table-container' style={{marginBottom: '5rem'}}>
+        <MaterialReactTable table={table} />
+      </div>
 
       <Modal
         show={showLoginModal}
@@ -84,7 +92,7 @@ const Contacts = () => {
           <Modal.Title>Confirm Credentials</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Login username={username} fetchAllContacts={fetchAllContacts} loading={loading} />
+          <Login username={username} endpoint={fetchAllContacts} loading={loading} />
         </Modal.Body>
       </Modal>
 

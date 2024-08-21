@@ -1,8 +1,7 @@
-// app.test.js
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
-import App from '../../App'; // Adjust the import path as needed
+import App from '../../App';
 import Login from '../Login';
 
 describe('Login Component', () => {
@@ -10,7 +9,7 @@ describe('Login Component', () => {
 
   const renderComponent = (props = {}) => {
     return render(
-      <Login fetchAllContacts={mockFetchAllContacts} loading={false} {...props} />
+      <Login endpoint={mockFetchAllContacts} loading={false} {...props} />
     );
   };
 
