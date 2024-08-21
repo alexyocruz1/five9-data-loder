@@ -16,31 +16,41 @@ const AddSkillUser = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [csvData, setCsvData] = useState(null);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
+  const [isAddSkillsButtonEnabled, setIsAddSkillsButtonEnabled] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
-  const fetchAllUsers = async (PassedUsername, PassedPassword, rememberUsername) => {
+  const addSkillsToUser = async (PassedUsername, PassedPassword, rememberUsername, skills) => {
     setLoading(true);
+    setShowProgressModal(true);
     try {
-      const response = await axios.post(`${apiRoute}/api/users/getUsersGeneralInfo/`, {
-        username: PassedUsername,
-        password: PassedPassword,
-      });
+      for (let i = 0; i < skills.length; i++) {
+        const userSkill = skills[i];
+        await axios.post(`${apiRoute}/api/skills/addSkillToUser/`, {
+          username: PassedUsername,
+          password: PassedPassword,
+          userSkill: userSkill // Ensure the key matches the expected structure
+        });
+        setProgress(((i + 1) / skills.length) * 100);
+      }
 
       setUsername(rememberUsername ? PassedUsername : '');
       setError(null);
 
       handleLoginSuccess();
     } catch (error) {
-      console.error('Error fetching users general info:', error);
-      setError('Failed to fetch users general info');
-      handleLoginError(error.response?.data?.message || 'Failed to fetch users general info');
+      console.error('Error adding skills to user:', error);
+      setError('Failed to add skills to user');
+      handleLoginError(error.response?.data?.message || 'Failed to add skills to user');
     } finally {
       setLoading(false);
+      setShowProgressModal(false);
     }
   };
 
   const handleLoginSuccess = () => {
     setShowLoginModal(false);
-    setToastMessage('Login successful and users general info synced!');
+    setToastMessage('Skills added successfully!');
     setShowSuccessToast(true);
   };
 
@@ -86,19 +96,27 @@ const AddSkillUser = () => {
           const hasRequiredColumns = requiredColumns.every((col) => csvColumns.includes(col));
 
           if (hasRequiredColumns) {
-            setCsvData(results.data);
+            const filteredData = results.data.filter(row => Object.values(row).some(value => value !== null && value !== ''));
+            setCsvData(filteredData);
+            setIsAddSkillsButtonEnabled(true);
           } else {
             setToastMessage('CSV file must contain the following columns: id, level, skillName, userName');
             setShowErrorToast(true);
+            setIsAddSkillsButtonEnabled(false);
           }
         },
         error: (error) => {
           console.error('Error parsing CSV file:', error);
           setToastMessage('Failed to parse CSV file');
           setShowErrorToast(true);
+          setIsAddSkillsButtonEnabled(false);
         },
       });
     }
+  };
+
+  const handleAddSkillsClick = () => {
+    setShowLoginModal(true);
   };
 
   return (
@@ -126,6 +144,14 @@ const AddSkillUser = () => {
           >
             <i className="bi bi-question-circle"></i>
           </Button>
+          <Button
+            variant="primary"
+            onClick={handleAddSkillsClick}
+            disabled={!isAddSkillsButtonEnabled}
+            style={{ marginLeft: '10px' }}
+          >
+            Add Skills to Users
+          </Button>
         </Col>
       </Row>
       {error && <p>{error}</p>}
@@ -142,7 +168,22 @@ const AddSkillUser = () => {
           <Modal.Title>Confirm Credentials</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Login username={username} endpoint={fetchAllUsers} loading={loading} />
+          <Login username={username} endpoint={(username, password, rememberUsername) => addSkillsToUser(username, password, rememberUsername, csvData)} loading={loading} />
+        </Modal.Body>
+      </Modal>
+
+      <Modal
+        show={showProgressModal}
+        onHide={() => setShowProgressModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Processing Skills</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="progress" role="progressbar" aria-label="Animated striped example" aria-valuenow={progress} aria-valuemin="0" aria-valuemax="100">
+            <div className="progress-bar progress-bar-striped progress-bar-animated" style={{ width: `${progress}%` }}>{Math.round(progress)}%</div>
+          </div>
         </Modal.Body>
       </Modal>
 

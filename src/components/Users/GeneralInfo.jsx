@@ -49,7 +49,7 @@ const GeneralInfo = () => {
 
       handleLoginSuccess();
 
-      temporalFetch(PassedUsername, PassedPassword, rememberUsername);
+      // temporalFetch(PassedUsername, PassedPassword, rememberUsername);
     } catch (error) {
       console.error('Error fetching users general info:', error);
       setError('Failed to fetch users general info');
