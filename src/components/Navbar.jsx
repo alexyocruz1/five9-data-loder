@@ -31,6 +31,14 @@ const NavbarComponent = () => {
               <NavDropdown.Item as={Link} to="/contacts" onClick={handleClose}>Get all contacts</NavDropdown.Item>
               <NavDropdown.Divider />
             </NavDropdown>
+            <NavDropdown title="Users" id="basic-nav-dropdown">
+              <NavDropdown.Item as={Link} to="/users-general-info" onClick={handleClose}>Get users general info</NavDropdown.Item>
+              <NavDropdown.Divider />
+            </NavDropdown>
+            <NavDropdown title="Skills" id="basic-nav-dropdown">
+              <NavDropdown.Item as={Link} to="/add-skills-to-user" onClick={handleClose}>Add skill to user</NavDropdown.Item>
+              <NavDropdown.Divider />
+            </NavDropdown>
           </Nav>
         </Navbar.Collapse>
       </Container>

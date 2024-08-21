@@ -10,7 +10,7 @@ describe('Login Component', () => {
   const renderComponent = (props = {}) => {
     return render(
       <Router>
-        <Login fetchAllContacts={mockFetchAllContacts} loading={false} {...props} />
+        <Login endpoint={mockFetchAllContacts} loading={false} {...props} />
       </Router>
     );
   };
