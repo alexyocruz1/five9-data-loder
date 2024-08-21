@@ -11,6 +11,6 @@ module.exports = {
   },
   testEnvironment: 'jsdom',
   transformIgnorePatterns: [
-    '/node_modules/(?!axios)' // Add any other modules that need to be transformed here
+    '/node_modules/(?!axios|export-to-csv)'
   ]
 };

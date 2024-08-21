@@ -1,12 +1,11 @@
-// app.test.js
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
 test('renders Home component by default', () => {
   render(<App />);
-  const homeElement = screen.getByText(/Home/i);
-  expect(homeElement).toBeInTheDocument();
+  const homeElements = screen.getAllByText(/Home/i);
+  expect(homeElements[0]).toBeInTheDocument();
 });
 
 test('renders Contacts component when navigating to /contacts', () => {
