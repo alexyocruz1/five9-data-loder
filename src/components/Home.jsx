@@ -8,6 +8,21 @@ const Home = () => {
       description: 'Fetches all contacts from the database.',
       requiresData: 'No',
     },
+    {
+      name: 'Get users general info',
+      description: 'Fetches all users general info.',
+      requiresData: 'No',
+    },
+    {
+      name: 'Get users info by Skill',
+      description: 'Fetches all users info with their skills.',
+      requiresData: 'No',
+    },
+    {
+      name: 'Add skills to user',
+      description: 'Add skills to existing users.',
+      requiresData: 'Yes',
+    }
   ];
 
   return (

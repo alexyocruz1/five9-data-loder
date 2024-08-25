@@ -8,11 +8,11 @@ const schema = yup.object().shape({
   password: yup.string().required('Password is required'),
 });
 
-const Login = ({ username, fetchAllContacts, loading }) => {
+const Login = ({ username, endpoint, loading }) => {
   const [rememberUsername, setRememberUsername] = useState(false);
 
   const handleSubmit = (values) => {
-    fetchAllContacts(values.username, values.password, rememberUsername);
+    endpoint(values.username, values.password, rememberUsername);
   }
 
   return (

@@ -1,36 +1,46 @@
-import React, { useState, useContext, useMemo } from 'react';
+import React, { useState, useContext, useMemo, useEffect } from 'react';
 import axios from 'axios';
-import { AppContext } from '../context/AppContext';
+import { AppContext } from '../../context/AppContext';
 import { Button, Modal, Container, Row, Col, Toast } from 'react-bootstrap';
-import { transformResponse } from '../utils';
-import Login from './Login';
+import { transformUsersWithSkillsResponse } from '../../utils';
+import Login from '../Login';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 
-const Contacts = () => {
-  const { contacts, setContacts, setUsername, username, apiRoute } = useContext(AppContext);
+const UsersBySkill = () => {
+  const { usersInfo, setUsersInfo, setUsername, username, apiRoute } = useContext(AppContext);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [tableData, setTableData] = useState([]);
 
-  const fetchAllContacts = async (PassedUsername, PassedPassword, rememberUsername) => {
+  useEffect(() => {
+    if (usersInfo && usersInfo?.data?.return?.length > 0) {
+      setTableData(transformUsersWithSkillsResponse(usersInfo));
+    }
+  }, [usersInfo]);
+
+  const fetchAllUsersInfo = async (PassedUsername, PassedPassword, rememberUsername) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${apiRoute}/api/contacts/getContactRecordsAll/`, {
+      const response = await axios.post(`${apiRoute}/api/users/getUsersInfo/`, {
         username: PassedUsername,
         password: PassedPassword,
       });
-      setContacts(transformResponse(response));
+
+      const transformedData = transformUsersWithSkillsResponse(response);
+      setTableData(transformedData);
+      setUsersInfo(response);
       setUsername(rememberUsername ? PassedUsername : '');
       setError(null);
 
       handleLoginSuccess();
     } catch (error) {
-      console.error('Error fetching contacts:', error);
-      setError('Failed to fetch contacts');
-      handleLoginError(error.response?.data?.message || 'Failed to fetch contacts');
+      console.error('Error fetching users info:', error);
+      setError('Failed to fetch users info');
+      handleLoginError(error.response?.data?.message || 'Failed to fetch users info');
     } finally {
       setLoading(false);
     }
@@ -38,7 +48,7 @@ const Contacts = () => {
 
   const handleLoginSuccess = () => {
     setShowLoginModal(false);
-    setToastMessage('Login successful and contacts synced!');
+    setToastMessage('Login successful and users info synced!');
     setShowSuccessToast(true);
   };
 
@@ -53,33 +63,53 @@ const Contacts = () => {
   };
 
   const columns = useMemo(() => {
-    if (contacts && contacts.length > 0) {
-      return Object.keys(contacts[0]).map((key) => ({
-        accessorKey: key,
-        header: key.replace(/_/g, ' ').toUpperCase(),
-        Cell: typeof contacts[0][key] === 'boolean' ? booleanCellRenderer : undefined,
-      }));
+    if (tableData && tableData.length > 0) {
+      const priorityColumns = Object.keys(tableData[0])
+        .filter(key => key.toLowerCase().includes('skill'))
+        .map((key) => ({
+          accessorKey: key,
+          header: key.replace(/_/g, ' ').toUpperCase(),
+          Cell: typeof tableData[0][key] === 'boolean' ? booleanCellRenderer : undefined,
+        }));
+
+      const remainingColumns = Object.keys(tableData[0])
+        .filter(key => !key.toLowerCase().includes('skill'))
+        .map((key) => ({
+          accessorKey: key,
+          header: key.replace(/_/g, ' ').toUpperCase(),
+          Cell: typeof tableData[0][key] === 'boolean' ? booleanCellRenderer : undefined,
+        }));
+
+      return [...priorityColumns, ...remainingColumns];
     }
     return [];
-  }, [contacts]);
+  }, [tableData]);
 
   const table = useMaterialReactTable({
     columns,
-    data: contacts || [],
+    data: tableData || [],
+    enableGrouping: true,
+    groupedColumnMode: 'reorder',
+    initialState: {
+      expanded: true,
+      grouping: [],
+      pagination: { pageIndex: 0, pageSize: 20 },
+    },
+    muiTableContainerProps: { sx: { maxHeight: '800px' } },
   });
 
   return (
     <Container>
       <Row className="align-items-center mb-3">
-        <Col xs={5} sm={4}>
-          <h1>Contacts</h1>
+        <Col xs={12} sm={6}>
+          <h1>Users By Skill</h1>
         </Col>
-        <Col xs={7} sm={8} className="text-right">
-          <Button onClick={() => setShowLoginModal(true)}>Sync Contacts</Button>
+        <Col xs={12} sm={6} className="text-right">
+          <Button onClick={() => setShowLoginModal(true)}>Sync Users Info</Button>
         </Col>
       </Row>
       {error && <p>{error}</p>}
-      <div className='table-container' style={{marginBottom: '5rem'}}>
+      <div className='table-container' style={{ marginBottom: '5rem' }}>
         <MaterialReactTable table={table} />
       </div>
 
@@ -92,7 +122,7 @@ const Contacts = () => {
           <Modal.Title>Confirm Credentials</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Login username={username} endpoint={fetchAllContacts} loading={loading} />
+          <Login username={username} endpoint={fetchAllUsersInfo} loading={loading} />
         </Modal.Body>
       </Modal>
 
@@ -127,4 +157,4 @@ const Contacts = () => {
   );
 };
 
-export default Contacts;
+export default UsersBySkill;
