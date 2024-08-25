@@ -33,6 +33,7 @@ const NavbarComponent = () => {
             </NavDropdown>
             <NavDropdown title="Users" id="basic-nav-dropdown">
               <NavDropdown.Item as={Link} to="/users-general-info" onClick={handleClose}>Get users general info</NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/users-by-skill" onClick={handleClose}>Get users by skill</NavDropdown.Item>
               <NavDropdown.Divider />
             </NavDropdown>
             <NavDropdown title="Skills" id="basic-nav-dropdown">

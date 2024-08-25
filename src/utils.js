@@ -16,32 +16,6 @@ export const transformResponse = (response) => {
 };
 
 /**
- * Transforms the users general response into a flat array of objects.
- * @param {Object} response - The response object containing users data.
- * @returns {Array} - An array of flattened user objects.
- */
-export const transformUsersInfoResponse = (response) => {
-  const { data } = response;
-  const users = data?.return || [];
-
-  return users.map((user) => {
-    const { generalInfo, roles = {}, skills = [] } = user;
-    const flattenedRoles = Object.keys(roles).map((role) => ({
-      role,
-      permissions: roles[role].permissions.map((perm) => `${perm.type}: ${perm.value}`).join(', '),
-    }));
-
-    return {
-      ...generalInfo,
-      agentGroups: user.agentGroups?.join(', ') || '',
-      cannedReports: user.cannedReports?.map((report) => report.name).join(', ') || '',
-      roles: flattenedRoles.map((role) => `${role.role}: ${role.permissions}`).join('; ') || '',
-      skills: skills.map((skill) => skill.skillName).join(', ') || '',
-    };
-  });
-};
-
-/**
  * Transforms the users info response into an array of objects.
  * @param {Object} response - The response object containing users info.
  * @returns {Array} - An array of user info objects.
@@ -49,4 +23,38 @@ export const transformUsersInfoResponse = (response) => {
 export const transformUsersGeneralResponse = (response) => {
   const { data } = response;
   return data?.return || [];
+};
+
+/**
+ * Transforms the users info response into an array of objects with generalInfo and skills.
+ * @param {Object} response - The response object containing users info.
+ * @returns {Array} - An array of user info objects with skills.
+ */
+export const transformUsersWithSkillsResponse = (response) => {
+  const { data } = response;
+  const users = data?.return || [];
+
+  const transformedUsers = [];
+
+  users.forEach(user => {
+    const { generalInfo, skills } = user;
+    if (skills && skills.length > 0) {
+      skills.forEach(skill => {
+        const transformedSkill = {};
+        Object.keys(skill).forEach(key => {
+          if (!key.toLowerCase().includes('skill')) {
+            transformedSkill[`skill${key.charAt(0).toUpperCase() + key.slice(1)}`] = skill[key];
+          } else {
+            transformedSkill[key] = skill[key];
+          }
+        });
+        transformedUsers.push({
+          ...generalInfo,
+          ...transformedSkill,
+        });
+      });
+    }
+  });
+
+  return transformedUsers;
 };
