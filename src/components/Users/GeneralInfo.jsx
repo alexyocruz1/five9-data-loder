@@ -48,27 +48,12 @@ const GeneralInfo = () => {
       setError(null);
 
       handleLoginSuccess();
-
-      // temporalFetch(PassedUsername, PassedPassword, rememberUsername);
     } catch (error) {
       console.error('Error fetching users general info:', error);
       setError('Failed to fetch users general info');
       handleLoginError(error.response?.data?.message || 'Failed to fetch users general info');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const temporalFetch = async (PassedUsername, PassedPassword, rememberUsername) => {
-    try {
-      const response = await axios.post(`${apiRoute}/api/users/getUsersInfo/`, {
-        username: PassedUsername,
-        password: PassedPassword,
-      });
-
-      console.log('response: ', response);
-    } catch (error) {
-      console.error('Error fetching users general info:', error);
     }
   };
 
@@ -117,7 +102,7 @@ const GeneralInfo = () => {
       >
         <Button
           onClick={handleExportData}
-          startIcon={<FileDownloadIcon />}
+          starticon={<FileDownloadIcon />}
         >
           Export All Data
         </Button>
@@ -126,14 +111,14 @@ const GeneralInfo = () => {
           onClick={() =>
             handleExportRows(table.getPrePaginationRowModel().rows)
           }
-          startIcon={<FileDownloadIcon />}
+          starticon={<FileDownloadIcon />}
         >
           Export All Rows
         </Button>
         <Button
           disabled={table.getRowModel().rows.length === 0}
           onClick={() => handleExportRows(table.getRowModel().rows)}
-          startIcon={<FileDownloadIcon />}
+          starticon={<FileDownloadIcon />}
         >
           Export Page Rows
         </Button>
@@ -142,7 +127,7 @@ const GeneralInfo = () => {
             !table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()
           }
           onClick={() => handleExportRows(table.getSelectedRowModel().rows)}
-          startIcon={<FileDownloadIcon />}
+          starticon={<FileDownloadIcon />}
         >
           Export Selected Rows
         </Button>
