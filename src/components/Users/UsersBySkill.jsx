@@ -5,6 +5,9 @@ import { Button, Modal, Container, Row, Col, Toast } from 'react-bootstrap';
 import { transformUsersWithSkillsResponse } from '../../utils';
 import Login from '../Login';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
+import { Box } from '@mui/material';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { mkConfig, generateCsv, download } from 'export-to-csv';
 
 const UsersBySkill = () => {
   const { usersInfo, setUsersInfo, setUsername, username, apiRoute } = useContext(AppContext);
@@ -15,6 +18,23 @@ const UsersBySkill = () => {
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [tableData, setTableData] = useState([]);
+
+  const csvConfig = mkConfig({
+    fieldSeparator: ',',
+    decimalSeparator: '.',
+    useKeysAsHeaders: true,
+  });
+
+  const handleExportRows = (rows) => {
+    const rowData = rows.map((row) => row.original);
+    const csv = generateCsv(csvConfig)(rowData);
+    download(csvConfig)(csv);
+  };
+  
+  const handleExportData = () => {
+    const csv = generateCsv(csvConfig)(tableData);
+    download(csvConfig)(csv);
+  };
 
   useEffect(() => {
     if (usersInfo && usersInfo?.data?.return?.length > 0) {
@@ -96,6 +116,48 @@ const UsersBySkill = () => {
       pagination: { pageIndex: 0, pageSize: 20 },
     },
     muiTableContainerProps: { sx: { maxHeight: '800px' } },
+    renderTopToolbarCustomActions: ({ table }) => (
+      <Box
+        sx={{
+          display: 'flex',
+          gap: '16px',
+          padding: '8px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Button
+          onClick={handleExportData}
+          starticon={<FileDownloadIcon />}
+        >
+          Export All Data
+        </Button>
+        <Button
+          disabled={table.getPrePaginationRowModel().rows.length === 0}
+          onClick={() =>
+            handleExportRows(table.getPrePaginationRowModel().rows)
+          }
+          starticon={<FileDownloadIcon />}
+        >
+          Export All Rows
+        </Button>
+        <Button
+          disabled={table.getRowModel().rows.length === 0}
+          onClick={() => handleExportRows(table.getRowModel().rows)}
+          starticon={<FileDownloadIcon />}
+        >
+          Export Page Rows
+        </Button>
+        <Button
+          disabled={
+            !table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()
+          }
+          onClick={() => handleExportRows(table.getSelectedRowModel().rows)}
+          starticon={<FileDownloadIcon />}
+        >
+          Export Selected Rows
+        </Button>
+      </Box>
+    ),
   });
 
   return (
