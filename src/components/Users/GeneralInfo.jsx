@@ -174,7 +174,7 @@ const GeneralInfo = () => {
         <Toast.Header>
           <strong className="me-auto">Success</strong>
         </Toast.Header>
-        <Toast.Body>{toastMessage}</Toast.Body>
+        <Toast.Body style={{color: 'white'}}>{toastMessage}</Toast.Body>
       </Toast>
 
       <Toast
