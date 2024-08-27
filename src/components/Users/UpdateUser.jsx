@@ -6,7 +6,7 @@ import Login from '../Login';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 import Papa from 'papaparse';
 
-const AddSkillUser = () => {
+const UpdateUser = () => {
   const { setUsername, username, apiRoute } = useContext(AppContext);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -16,41 +16,60 @@ const AddSkillUser = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [csvData, setCsvData] = useState(null);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
-  const [isAddSkillsButtonEnabled, setIsAddSkillsButtonEnabled] = useState(false);
+  const [isUpdateUserButtonEnabled, setIsUpdateUserButtonEnabled] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showProgressModal, setShowProgressModal] = useState(false);
+  const [successfulUsers, setSuccessfulUsers] = useState([]);
+  const [failedUsers, setFailedUsers] = useState([]);
 
-  const addSkillsToUser = async (PassedUsername, PassedPassword, rememberUsername, skills) => {
+  const permittedColumns = [
+    'active', 'canChangePassword', 'EMail', 'extension', 'federationId', 'firstName', 'fullName', 'id', 'IEXScheduled', 'lastName', 'locale', 'mediaTypeConfig', 'mustChangePassword', 'password', 'phoneNumber', 'startDate', 'unifiedCommunicationId', 'userName', 'userProfileName'
+  ];
+
+  const updateUserInfo = async (PassedUsername, PassedPassword, rememberUsername, users) => {
     setLoading(true);
     setShowProgressModal(true);
+    const successful = [];
+    const failed = [];
     try {
-      for (let i = 0; i < skills.length; i++) {
-        const userSkill = skills[i];
-        await axios.post(`${apiRoute}/api/skills/addSkillToUser/`, {
-          username: PassedUsername,
-          password: PassedPassword,
-          userSkill: userSkill
-        });
-        setProgress(((i + 1) / skills.length) * 100);
+      for (let i = 0; i < users.length; i++) {
+        const userToUpdate = users[i];
+        try {
+          await axios.put(`${apiRoute}/api/users/updateUser/`, {
+            username: PassedUsername,
+            password: PassedPassword,
+            userGeneralInfo: userToUpdate
+          });
+          successful.push(userToUpdate.userName);
+        } catch (error) {
+          console.error(`Error updating user ${userToUpdate.userName}:`, error);
+          failed.push(userToUpdate.userName);
+        }
+        setProgress(((i + 1) / users.length) * 100);
       }
 
       setUsername(rememberUsername ? PassedUsername : '');
       setError(null);
+      setSuccessfulUsers(successful);
+      setFailedUsers(failed);
 
-      handleLoginSuccess();
+      handleLoginSuccess(successful, failed);
     } catch (error) {
-      console.error('Error adding skills to user:', error);
-      setError('Failed to add skills to user');
-      handleLoginError(error.response?.data?.message || 'Failed to add skills to user');
+      console.error('Error updating users general info:', error);
+      setError('Failed to update users general info');
+      handleLoginError(error.response?.data?.message || 'Failed to update users general info');
     } finally {
       setLoading(false);
       setShowProgressModal(false);
     }
   };
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (successful, failed) => {
     setShowLoginModal(false);
-    setToastMessage('Skills added successfully!');
+    const successMessage = successful.length > 0 ? `Successfully updated users:\n${successful.join('\n')}` : '';
+    const failedMessage = failed.length > 0 ? `Failed to update users:\n${failed.join('\n')}` : '';
+    const combinedMessage = [successMessage, failedMessage].filter(Boolean).join('\n\n');
+    setToastMessage(combinedMessage.replace(/\n/g, '<br />'));
     setShowSuccessToast(true);
   };
 
@@ -91,31 +110,31 @@ const AddSkillUser = () => {
         header: true,
         dynamicTyping: true,
         complete: (results) => {
-          const requiredColumns = ['id', 'level', 'skillName', 'userName'];
           const csvColumns = Object.keys(results.data[0]);
-          const hasRequiredColumns = requiredColumns.every((col) => csvColumns.includes(col));
+          const hasRequiredColumn = csvColumns.includes('userName');
+          const hasOnlyPermittedColumns = csvColumns.every((col) => permittedColumns.includes(col));
 
-          if (hasRequiredColumns) {
+          if (hasRequiredColumn && hasOnlyPermittedColumns) {
             const filteredData = results.data.filter(row => Object.values(row).some(value => value !== null && value !== ''));
             setCsvData(filteredData);
-            setIsAddSkillsButtonEnabled(true);
+            setIsUpdateUserButtonEnabled(true);
           } else {
-            setToastMessage('CSV file must contain the following columns: id, level, skillName, userName');
+            setToastMessage('CSV file must contain the required column: userName and only permitted columns.');
             setShowErrorToast(true);
-            setIsAddSkillsButtonEnabled(false);
+            setIsUpdateUserButtonEnabled(false);
           }
         },
         error: (error) => {
           console.error('Error parsing CSV file:', error);
           setToastMessage('Failed to parse CSV file');
           setShowErrorToast(true);
-          setIsAddSkillsButtonEnabled(false);
+          setIsUpdateUserButtonEnabled(false);
         },
       });
     }
   };
 
-  const handleAddSkillsClick = () => {
+  const handleAddUserUpdateClick = () => {
     setShowLoginModal(true);
   };
 
@@ -123,7 +142,7 @@ const AddSkillUser = () => {
     <Container>
       <Row className="align-items-center mb-3">
         <Col xs={12} sm={12} lg={6}>
-          <h1>Users General Info</h1>
+          <h1>Update Users General Info</h1>
         </Col>
         <Col xs={12} sm={12} lg={6} className="text-right">
           <input
@@ -146,11 +165,11 @@ const AddSkillUser = () => {
           </Button>
           <Button
             variant="primary"
-            onClick={handleAddSkillsClick}
-            disabled={!isAddSkillsButtonEnabled}
+            onClick={handleAddUserUpdateClick}
+            disabled={!isUpdateUserButtonEnabled}
             style={{ marginLeft: '10px' }}
           >
-            Add Skills to Users
+            Update Users General Info
           </Button>
         </Col>
       </Row>
@@ -168,7 +187,7 @@ const AddSkillUser = () => {
           <Modal.Title>Confirm Credentials</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Login username={username} endpoint={(username, password, rememberUsername) => addSkillsToUser(username, password, rememberUsername, csvData)} loading={loading} />
+          <Login username={username} endpoint={(username, password, rememberUsername) => updateUserInfo(username, password, rememberUsername, csvData)} loading={loading} />
         </Modal.Body>
       </Modal>
 
@@ -178,7 +197,7 @@ const AddSkillUser = () => {
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Processing Skills</Modal.Title>
+          <Modal.Title>Processing Users</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="progress" role="progressbar" aria-label="Animated striped example" aria-valuenow={progress} aria-valuemin="0" aria-valuemax="100">
@@ -191,21 +210,20 @@ const AddSkillUser = () => {
         onClose={() => setShowSuccessToast(false)}
         show={showSuccessToast}
         delay={3000}
-        autohide
-        bg="success"
+        autohide={false}
+        bg="primary-subtle"
         style={{ position: 'fixed', top: 20, right: 20, zIndex: 1050 }}
       >
         <Toast.Header>
-          <strong className="me-auto">Success</strong>
+          <strong className="me-auto">Info</strong>
         </Toast.Header>
-        <Toast.Body style={{color: 'white'}}>{toastMessage}</Toast.Body>
+        <Toast.Body style={{fontWeight: 'bolder'}} dangerouslySetInnerHTML={{ __html: toastMessage }} />
       </Toast>
 
       <Toast
         onClose={() => setShowErrorToast(false)}
         show={showErrorToast}
         delay={3000}
-        autohide
         bg="danger"
         style={{ position: 'fixed', top: 20, right: 20, zIndex: 1050 }}
       >
@@ -223,37 +241,18 @@ const AddSkillUser = () => {
           <p>Here are the instructions on how to use this page:</p>
           <ul>
             <li>Click on "Import CSV" to upload a CSV file.</li>
-            <li>The CSV file must contain the following columns: id, level, skillName, userName.</li>
+            <li>The CSV file must contain the required column: userName.</li>
+            <li>The CSV file can only contain the following permitted columns:</li>
+            <ul>
+              {permittedColumns.map((col) => (
+                <li key={col}>{col}</li>
+              ))}
+            </ul>
           </ul>
-          <h5>CSV Format Example:</h5>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>id</th>
-                <th>level</th>
-                <th>skillName</th>
-                <th>userName</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td>Expert</td>
-                <td>JavaScript</td>
-                <td>JohnDoe</td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td>Intermediate</td>
-                <td>React</td>
-                <td>JaneDoe</td>
-              </tr>
-            </tbody>
-          </table>
         </Offcanvas.Body>
       </Offcanvas>
     </Container>
   );
 };
 
-export default AddSkillUser;
+export default UpdateUser;
