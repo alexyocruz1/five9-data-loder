@@ -19,8 +19,13 @@ const Home = () => {
       requiresData: 'No',
     },
     {
+      name: 'Update users general info',
+      description: 'updates general info from existing users on five9 depending on csv file.',
+      requiresData: 'Yes',
+    },
+    {
       name: 'Add skills to user',
-      description: 'Add skills to existing users.',
+      description: 'Add skills to existing users on five9 depending on csv file.',
       requiresData: 'Yes',
     }
   ];
