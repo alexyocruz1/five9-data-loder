@@ -6,7 +6,7 @@ import Login from '../Login';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 import Papa from 'papaparse';
 
-const UpdateUser = () => {
+const CreateUser = () => {
   const { setUsername, username, apiRoute } = useContext(AppContext);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -16,34 +16,39 @@ const UpdateUser = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [csvData, setCsvData] = useState(null);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
-  const [isUpdateUserButtonEnabled, setIsUpdateUserButtonEnabled] = useState(false);
+  const [isCreateUserButtonEnabled, setIsCreateUserButtonEnabled] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showProgressModal, setShowProgressModal] = useState(false);
 
   const permittedColumns = [
-    'active', 'canChangePassword', 'EMail', 'extension', 'federationId', 'firstName', 'fullName', 'id', 'IEXScheduled', 'lastName', 'locale', 'mediaTypeConfig', 'mustChangePassword', 'password', 'phoneNumber', 'startDate', 'unifiedCommunicationId', 'userName', 'userProfileName'
+    'userName', 'password', 'firstName', 'lastName', 'EMail'
   ];
 
-  const updateUserInfo = async (PassedUsername, PassedPassword, rememberUsername, users) => {
+  const createUserInfo = async (PassedUsername, PassedPassword, rememberUsername, users) => {
     setLoading(true);
     setShowProgressModal(true);
-    setProgress(0);
-    
     const successful = [];
     const failed = [];
     try {
       for (let i = 0; i < users.length; i++) {
-        const userToUpdate = users[i];
+        let userToCreate = {}
+        userToCreate.generalInfo = users[i];
+        userToCreate.skills = {};
+        userToCreate.agentGroups = [
+            'demo'
+        ];
+        userToCreate.roles = {};
+        userToCreate.cannedReports = {};
         try {
-          await axios.put(`${apiRoute}/api/users/updateUser/`, {
+          await axios.post(`${apiRoute}/api/users/createUser/`, {
             username: PassedUsername,
             password: PassedPassword,
-            userGeneralInfo: userToUpdate
+            userInfo: userToCreate,
           });
-          successful.push(userToUpdate.userName);
+          successful.push(userToCreate.generalInfo.userName);
         } catch (error) {
-          console.error(`Error updating user ${userToUpdate.userName}:`, error);
-          failed.push(userToUpdate.userName);
+          console.error(`Error creating user ${userToCreate.generalInfo.userName}:`, error);
+          failed.push(userToCreate.generalInfo.userName);
         }
         setProgress(((i + 1) / users.length) * 100);
       }
@@ -53,9 +58,9 @@ const UpdateUser = () => {
 
       handleLoginSuccess(successful, failed);
     } catch (error) {
-      console.error('Error updating users general info:', error);
-      setError('Failed to update users general info');
-      handleLoginError(error.response?.data?.message || 'Failed to update users general info');
+      console.error('Error creating users general info:', error);
+      setError('Failed to create users general info');
+      handleLoginError(error.response?.data?.message || 'Failed to create users general info');
     } finally {
       setLoading(false);
       setShowProgressModal(false);
@@ -64,8 +69,8 @@ const UpdateUser = () => {
 
   const handleLoginSuccess = (successful, failed) => {
     setShowLoginModal(false);
-    const successMessage = successful.length > 0 ? `Successfully updated users:\n${successful.join('\n')}` : '';
-    const failedMessage = failed.length > 0 ? `Failed to update users:\n${failed.join('\n')}` : '';
+    const successMessage = successful.length > 0 ? `Successfully created users:\n${successful.join('\n')}` : '';
+    const failedMessage = failed.length > 0 ? `Failed to create users:\n${failed.join('\n')}` : '';
     const combinedMessage = [successMessage, failedMessage].filter(Boolean).join('\n\n');
     setToastMessage(combinedMessage.replace(/\n/g, '<br />'));
     setShowSuccessToast(true);
@@ -104,43 +109,56 @@ const UpdateUser = () => {
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
+        setCsvData(null);
       Papa.parse(file, {
         header: true,
         dynamicTyping: true,
         complete: (results) => {
           const csvColumns = Object.keys(results.data[0]);
-          const hasRequiredColumn = csvColumns.includes('userName');
-          const hasOnlyPermittedColumns = csvColumns.every((col) => permittedColumns.includes(col));
-
-          if (hasRequiredColumn && hasOnlyPermittedColumns) {
+          const hasAllPermittedColumns = permittedColumns.every((col) => csvColumns.includes(col));
+  
+          if (hasAllPermittedColumns) {
             const filteredData = results.data.filter(row => Object.values(row).some(value => value !== null && value !== ''));
             setCsvData(filteredData);
-            setIsUpdateUserButtonEnabled(true);
+            setIsCreateUserButtonEnabled(true);
           } else {
-            setToastMessage('CSV file must contain the required column: userName and only permitted columns.');
+            setToastMessage('CSV file must contain all the required columns: ' + permittedColumns.join(', ') + '.');
             setShowErrorToast(true);
-            setIsUpdateUserButtonEnabled(false);
+            setIsCreateUserButtonEnabled(false);
           }
         },
         error: (error) => {
           console.error('Error parsing CSV file:', error);
           setToastMessage('Failed to parse CSV file');
           setShowErrorToast(true);
-          setIsUpdateUserButtonEnabled(false);
+          setIsCreateUserButtonEnabled(false);
         },
       });
     }
   };
 
-  const handleAddUserUpdateClick = () => {
+  const handleAddUserCreateClick = () => {
     setShowLoginModal(true);
+  };
+
+  const handleDownloadTemplate = () => {
+    const csvContent = permittedColumns.join(',') + '\n';
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'user_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
     <Container>
       <Row className="align-items-center mb-3">
         <Col xs={12} sm={12} lg={6}>
-          <h1>Update Users General Info</h1>
+          <h1>Create Users General Info</h1>
         </Col>
         <Col xs={12} sm={12} lg={6} className="text-right">
           <input
@@ -163,11 +181,11 @@ const UpdateUser = () => {
           </Button>
           <Button
             variant="primary"
-            onClick={handleAddUserUpdateClick}
-            disabled={!isUpdateUserButtonEnabled}
+            onClick={handleAddUserCreateClick}
+            disabled={!isCreateUserButtonEnabled}
             style={{ marginLeft: '10px' }}
           >
-            Update Users General Info
+            Create Users General Info
           </Button>
         </Col>
       </Row>
@@ -185,7 +203,7 @@ const UpdateUser = () => {
           <Modal.Title>Confirm Credentials</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Login username={username} endpoint={(username, password, rememberUsername) => updateUserInfo(username, password, rememberUsername, csvData)} loading={loading} />
+          <Login username={username} endpoint={(username, password, rememberUsername) => createUserInfo(username, password, rememberUsername, csvData)} loading={loading} />
         </Modal.Body>
       </Modal>
 
@@ -247,10 +265,11 @@ const UpdateUser = () => {
               ))}
             </ul>
           </ul>
+          <Button onClick={handleDownloadTemplate}>Download CSV Template</Button>
         </Offcanvas.Body>
       </Offcanvas>
     </Container>
   );
 };
 
-export default UpdateUser;
+export default CreateUser;
