@@ -58,3 +58,18 @@ export const transformUsersWithSkillsResponse = (response) => {
 
   return transformedUsers;
 };
+
+export const roles = {
+  admin: {
+      permissions: []
+  },
+  agent: {
+    permissions: []
+  },
+  reporting: {
+    permissions: []
+  },
+  supervisor: {
+    permissions: []
+  }
+};
