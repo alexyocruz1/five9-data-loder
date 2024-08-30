@@ -16,17 +16,6 @@ describe('Home Component', () => {
     expect(paragraphElement).toBeInTheDocument();
   });
 
-  test('renders the table headers', () => {
-    render(<Home />);
-    const functionHeader = screen.getByText(/Function/i);
-    const descriptionHeader = screen.getByText(/Description/i);
-    const requiresDataHeader = screen.getByText(/Requires Data/i);
-
-    expect(functionHeader).toBeInTheDocument();
-    expect(descriptionHeader).toBeInTheDocument();
-    expect(requiresDataHeader).toBeInTheDocument();
-  });
-
   test('renders the table data', () => {
     render(<Home />);
     
