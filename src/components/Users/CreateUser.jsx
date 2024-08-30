@@ -5,8 +5,9 @@ import { Button, Modal, Container, Row, Col, Toast, Offcanvas } from 'react-boot
 import Login from '../Login';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 import Papa from 'papaparse';
+import { roles } from '../../utils';
 
-const AddSkillUser = () => {
+const CreateUser = () => {
   const { setUsername, username, apiRoute } = useContext(AppContext);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -16,41 +17,64 @@ const AddSkillUser = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [csvData, setCsvData] = useState(null);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
-  const [isAddSkillsButtonEnabled, setIsAddSkillsButtonEnabled] = useState(false);
+  const [isCreateUserButtonEnabled, setIsCreateUserButtonEnabled] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showProgressModal, setShowProgressModal] = useState(false);
 
-  const addSkillsToUser = async (PassedUsername, PassedPassword, rememberUsername, skills) => {
+  const permittedColumns = [
+    'userName', 'password', 'firstName', 'lastName', 'EMail'
+  ];
+
+  const createUserInfo = async (PassedUsername, PassedPassword, rememberUsername, users) => {
     setLoading(true);
     setShowProgressModal(true);
+
+    const successful = [];
+    const failed = [];
     try {
-      for (let i = 0; i < skills.length; i++) {
-        const userSkill = skills[i];
-        await axios.post(`${apiRoute}/api/skills/addSkillToUser/`, {
-          username: PassedUsername,
-          password: PassedPassword,
-          userSkill: userSkill
-        });
-        setProgress(((i + 1) / skills.length) * 100);
+      for (let i = 0; i < users.length; i++) {
+        let userToCreate = {}
+        userToCreate.generalInfo = users[i];
+        userToCreate.skills = [];
+        userToCreate.agentGroups = [];
+        userToCreate.roles = roles;
+        userToCreate.cannedReports = [];
+        try {
+          await axios.post(`${apiRoute}/api/users/createUser/`, {
+            username: PassedUsername,
+            password: PassedPassword,
+            userInfo: userToCreate,
+          });
+          successful.push(userToCreate.generalInfo.userName);
+        } catch (error) {
+          console.error(`Error creating user ${userToCreate.generalInfo.userName}:`, error);
+          failed.push(userToCreate.generalInfo.userName);
+        }
+        setProgress(((i + 1) / users.length) * 100);
       }
+
+      setProgress(0);
 
       setUsername(rememberUsername ? PassedUsername : '');
       setError(null);
 
-      handleLoginSuccess();
+      handleLoginSuccess(successful, failed);
     } catch (error) {
-      console.error('Error adding skills to user:', error);
-      setError('Failed to add skills to user');
-      handleLoginError(error.response?.data?.message || 'Failed to add skills to user');
+      console.error('Error creating users general info:', error);
+      setError('Failed to create users general info');
+      handleLoginError(error.response?.data?.message || 'Failed to create users general info');
     } finally {
       setLoading(false);
       setShowProgressModal(false);
     }
   };
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (successful, failed) => {
     setShowLoginModal(false);
-    setToastMessage('Skills added successfully!');
+    const successMessage = successful.length > 0 ? `Successfully created users:\n${successful.join('\n')}` : '';
+    const failedMessage = failed.length > 0 ? `Failed to create users:\n${failed.join('\n')}` : '';
+    const combinedMessage = [successMessage, failedMessage].filter(Boolean).join('\n\n');
+    setToastMessage(combinedMessage.replace(/\n/g, '<br />'));
     setShowSuccessToast(true);
   };
 
@@ -87,43 +111,56 @@ const AddSkillUser = () => {
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
+      setCsvData([]);
       Papa.parse(file, {
         header: true,
         dynamicTyping: true,
         complete: (results) => {
-          const requiredColumns = ['id', 'level', 'skillName', 'userName'];
           const csvColumns = Object.keys(results.data[0]);
-          const hasRequiredColumns = requiredColumns.every((col) => csvColumns.includes(col));
-
-          if (hasRequiredColumns) {
+          const hasAllPermittedColumns = permittedColumns.every((col) => csvColumns.includes(col));
+  
+          if (hasAllPermittedColumns) {
             const filteredData = results.data.filter(row => Object.values(row).some(value => value !== null && value !== ''));
             setCsvData(filteredData);
-            setIsAddSkillsButtonEnabled(true);
+            setIsCreateUserButtonEnabled(true);
           } else {
-            setToastMessage('CSV file must contain the following columns: id, level, skillName, userName');
+            setToastMessage('CSV file must contain all the required columns: ' + permittedColumns.join(', ') + '.');
             setShowErrorToast(true);
-            setIsAddSkillsButtonEnabled(false);
+            setIsCreateUserButtonEnabled(false);
           }
         },
         error: (error) => {
           console.error('Error parsing CSV file:', error);
           setToastMessage('Failed to parse CSV file');
           setShowErrorToast(true);
-          setIsAddSkillsButtonEnabled(false);
+          setIsCreateUserButtonEnabled(false);
         },
       });
     }
   };
 
-  const handleAddSkillsClick = () => {
+  const handleAddUserCreateClick = () => {
     setShowLoginModal(true);
+  };
+
+  const handleDownloadTemplate = () => {
+    const csvContent = permittedColumns.join(',') + '\n';
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'user_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
     <Container>
       <Row className="align-items-center mb-3">
         <Col xs={12} sm={12} lg={6}>
-          <h1>Users General Info</h1>
+          <h1>Create Users General Info</h1>
         </Col>
         <Col xs={12} sm={12} lg={6} className="text-right">
           <input
@@ -146,11 +183,11 @@ const AddSkillUser = () => {
           </Button>
           <Button
             variant="primary"
-            onClick={handleAddSkillsClick}
-            disabled={!isAddSkillsButtonEnabled}
+            onClick={handleAddUserCreateClick}
+            disabled={!isCreateUserButtonEnabled}
             style={{ marginLeft: '10px' }}
           >
-            Add Skills to Users
+            Create Users General Info
           </Button>
         </Col>
       </Row>
@@ -168,7 +205,7 @@ const AddSkillUser = () => {
           <Modal.Title>Confirm Credentials</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Login username={username} endpoint={(username, password, rememberUsername) => addSkillsToUser(username, password, rememberUsername, csvData)} loading={loading} />
+          <Login username={username} endpoint={(username, password, rememberUsername) => createUserInfo(username, password, rememberUsername, csvData)} loading={loading} />
         </Modal.Body>
       </Modal>
 
@@ -178,7 +215,7 @@ const AddSkillUser = () => {
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Processing Skills</Modal.Title>
+          <Modal.Title>Processing Users</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="progress" role="progressbar" aria-label="Animated striped example" aria-valuenow={progress} aria-valuemin="0" aria-valuemax="100">
@@ -191,21 +228,20 @@ const AddSkillUser = () => {
         onClose={() => setShowSuccessToast(false)}
         show={showSuccessToast}
         delay={3000}
-        autohide
-        bg="success"
+        autohide={false}
+        bg="primary-subtle"
         style={{ position: 'fixed', top: 20, right: 20, zIndex: 1050 }}
       >
         <Toast.Header>
-          <strong className="me-auto">Success</strong>
+          <strong className="me-auto">Info</strong>
         </Toast.Header>
-        <Toast.Body style={{color: 'white'}}>{toastMessage}</Toast.Body>
+        <Toast.Body style={{fontWeight: 'bolder'}} dangerouslySetInnerHTML={{ __html: toastMessage }} />
       </Toast>
 
       <Toast
         onClose={() => setShowErrorToast(false)}
         show={showErrorToast}
         delay={3000}
-        autohide
         bg="danger"
         style={{ position: 'fixed', top: 20, right: 20, zIndex: 1050 }}
       >
@@ -223,37 +259,19 @@ const AddSkillUser = () => {
           <p>Here are the instructions on how to use this page:</p>
           <ul>
             <li>Click on "Import CSV" to upload a CSV file.</li>
-            <li>The CSV file must contain the following columns: id, level, skillName, userName.</li>
+            <li>The CSV file must contain the required column: userName.</li>
+            <li>The CSV file can only contain the following permitted columns:</li>
+            <ul>
+              {permittedColumns.map((col) => (
+                <li key={col}>{col}</li>
+              ))}
+            </ul>
           </ul>
-          <h5>CSV Format Example:</h5>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>id</th>
-                <th>level</th>
-                <th>skillName</th>
-                <th>userName</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td>Expert</td>
-                <td>JavaScript</td>
-                <td>JohnDoe</td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td>Intermediate</td>
-                <td>React</td>
-                <td>JaneDoe</td>
-              </tr>
-            </tbody>
-          </table>
+          <Button onClick={handleDownloadTemplate}>Download CSV Template</Button>
         </Offcanvas.Body>
       </Offcanvas>
     </Container>
   );
 };
 
-export default AddSkillUser;
+export default CreateUser;
