@@ -5,6 +5,7 @@ import { Button, Modal, Container, Row, Col, Toast, Offcanvas } from 'react-boot
 import Login from '../Login';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 import Papa from 'papaparse';
+import { roles } from '../../utils';
 
 const CreateUser = () => {
   const { setUsername, username, apiRoute } = useContext(AppContext);
@@ -27,18 +28,17 @@ const CreateUser = () => {
   const createUserInfo = async (PassedUsername, PassedPassword, rememberUsername, users) => {
     setLoading(true);
     setShowProgressModal(true);
+
     const successful = [];
     const failed = [];
     try {
       for (let i = 0; i < users.length; i++) {
         let userToCreate = {}
         userToCreate.generalInfo = users[i];
-        userToCreate.skills = {};
-        userToCreate.agentGroups = [
-            'demo'
-        ];
-        userToCreate.roles = {};
-        userToCreate.cannedReports = {};
+        userToCreate.skills = [];
+        userToCreate.agentGroups = [];
+        userToCreate.roles = roles;
+        userToCreate.cannedReports = [];
         try {
           await axios.post(`${apiRoute}/api/users/createUser/`, {
             username: PassedUsername,
@@ -52,6 +52,8 @@ const CreateUser = () => {
         }
         setProgress(((i + 1) / users.length) * 100);
       }
+
+      setProgress(0);
 
       setUsername(rememberUsername ? PassedUsername : '');
       setError(null);
@@ -109,7 +111,7 @@ const CreateUser = () => {
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-        setCsvData(null);
+      setCsvData([]);
       Papa.parse(file, {
         header: true,
         dynamicTyping: true,
