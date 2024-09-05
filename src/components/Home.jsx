@@ -27,6 +27,11 @@ const Home = () => {
       name: 'Add skills to user',
       description: 'Add skills to existing users on Five9 depending on CSV file.',
       requiresData: 'Yes',
+    },
+    {
+      name: 'Remove user',
+      description: 'Remove existing users from five9.',
+      requiresData: 'Yes',
     }
   ];
 
@@ -94,8 +99,8 @@ const Home = () => {
               </tr>
             </thead>
             <tbody>
-              {pendingPatches.map((patch) => (
-                <tr key={patch.id}>
+              {pendingPatches.map((patch, index) => (
+                <tr key={index}>
                   <td>{patch.title}</td>
                   <td>{patch.bug}</td>
                 </tr>

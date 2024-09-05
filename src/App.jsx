@@ -11,6 +11,7 @@ import UsersBySkill from './components/Users/UsersBySkill';
 import GeneralInfo from './components/Users/GeneralInfo';
 import UpdateUser from './components/Users/UpdateUser';
 import CreateUser from './components/Users/CreateUser';
+import RemoveUser from './components/Users/RemoveUser';
 
 // Skills
 import AddSkillUser from './components/Skills/AddSkillUser';
@@ -34,6 +35,7 @@ const App = () => {
             <Route path="/users-by-skill" element={<UsersBySkill />} />
             <Route path="/update-user-info" element={<UpdateUser />} />
             <Route path="/create-user-info" element={<CreateUser />} />
+            <Route path="/remove-user-info" element={<RemoveUser />} />
 
             <Route path="/add-skills-to-user" element={<AddSkillUser />} />
           </Routes>
