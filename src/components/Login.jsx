@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Button, Col, Container, Form, InputGroup, Row, Spinner } from 'react-bootstrap';
+import { Button, Form, InputGroup, Spinner, Card, Alert } from 'react-bootstrap';
 import { Formik } from 'formik';
 import * as yup from 'yup';
+import { PersonFill, LockFill, EyeFill, EyeSlashFill } from 'react-bootstrap-icons';
 
 const schema = yup.object().shape({
   username: yup.string().required('Username is required'),
@@ -10,15 +11,17 @@ const schema = yup.object().shape({
 
 const Login = ({ username, endpoint, loading }) => {
   const [rememberUsername, setRememberUsername] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (values) => {
     endpoint(values.username, values.password, rememberUsername);
   }
 
   return (
-    <Container fluid className="d-flex">
-      <Row className="m-auto align-self-center w-100">
-        <Col className="mx-auto">
+    <div className="p-3"> {/* Add padding here */}
+      <Card className="shadow">
+        <Card.Body className="p-4">
+          <h2 className="text-center mb-4">Login</h2>
           <Formik
             validationSchema={schema}
             onSubmit={handleSubmit}
@@ -29,74 +32,91 @@ const Login = ({ username, endpoint, loading }) => {
           >
             {({ handleSubmit, handleChange, values, touched, errors }) => (
               <Form noValidate onSubmit={handleSubmit}>
-                <Row className="mb-3">
-                  <Form.Group as={Col} md="12" controlId="validationFormikUsername">
-                    <Form.Label>Username</Form.Label>
-                    <InputGroup hasValidation>
-                      <InputGroup.Text id="inputGroupPrepend">@</InputGroup.Text>
-                      <Form.Control
-                        type="text"
-                        placeholder="Username"
-                        aria-describedby="inputGroupPrepend"
-                        name="username"
-                        value={values.username}
-                        onChange={handleChange}
-                        isInvalid={!!errors.username}
-                      />
-                      <Form.Control.Feedback type="invalid">
-                        {errors.username}
-                      </Form.Control.Feedback>
-                    </InputGroup>
-                  </Form.Group>
-                </Row>
-                <Row className="mb-3">
-                  <Form.Group as={Col} md="12" controlId="validationFormikPassword">
-                    <Form.Label>Password</Form.Label>
+                <Form.Group className="mb-3" controlId="validationFormikUsername">
+                  <Form.Label>Username</Form.Label>
+                  <InputGroup hasValidation>
+                    <InputGroup.Text>
+                      <PersonFill />
+                    </InputGroup.Text>
                     <Form.Control
-                      type="password"
-                      placeholder="Password"
+                      type="text"
+                      placeholder="Enter your username"
+                      name="username"
+                      value={values.username}
+                      onChange={handleChange}
+                      isInvalid={touched.username && !!errors.username}
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.username}
+                    </Form.Control.Feedback>
+                  </InputGroup>
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="validationFormikPassword">
+                  <Form.Label>Password</Form.Label>
+                  <InputGroup hasValidation>
+                    <InputGroup.Text>
+                      <LockFill />
+                    </InputGroup.Text>
+                    <Form.Control
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
                       name="password"
                       value={values.password}
                       onChange={handleChange}
-                      isInvalid={!!errors.password}
+                      isInvalid={touched.password && !!errors.password}
                     />
+                    <Button 
+                      variant="outline-secondary"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeSlashFill /> : <EyeFill />}
+                    </Button>
                     <Form.Control.Feedback type="invalid">
                       {errors.password}
                     </Form.Control.Feedback>
-                  </Form.Group>
-                </Row>
-                <Row className="mb-3">
-                  <Form.Group as={Col} md="12" controlId="validationFormikRememberUsername">
-                    <Form.Check
-                      type="checkbox"
-                      label="Remember my username"
-                      checked={rememberUsername}
-                      onChange={(e) => setRememberUsername(e.target.checked)}
-                    />
-                  </Form.Group>
-                </Row>
-                <Button type="submit" className="w-100" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Spinner
-                        as="span"
-                        animation="border"
-                        size="sm"
-                        role="status"
-                        aria-hidden="true"
-                      />{' '}
-                      Loading...
-                    </>
-                  ) : (
-                    'Login'
-                  )}
-                </Button>
+                  </InputGroup>
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="validationFormikRememberUsername">
+                  <Form.Check
+                    type="checkbox"
+                    label="Remember my username"
+                    checked={rememberUsername}
+                    onChange={(e) => setRememberUsername(e.target.checked)}
+                  />
+                </Form.Group>
+
+                <div className="d-grid">
+                  <Button type="submit" variant="primary" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                          className="me-2"
+                        />
+                        Logging in...
+                      </>
+                    ) : (
+                      'Login'
+                    )}
+                  </Button>
+                </div>
               </Form>
             )}
           </Formik>
-        </Col>
-      </Row>
-    </Container>
+        </Card.Body>
+      </Card>
+      {loading && (
+        <Alert variant="info" className="mt-3">
+          Please wait while we process your request...
+        </Alert>
+      )}
+    </div>
   );
 };
 
