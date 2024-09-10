@@ -1,23 +1,27 @@
+/* eslint-disable react/jsx-pascal-case */
+
 import React, { useState, useContext, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import { AppContext } from '../../context/AppContext';
-import { Button, Modal, Container, Row, Col, Toast } from 'react-bootstrap';
+import { Button, Modal, Container, Row, Col, Toast, ButtonGroup } from 'react-bootstrap';
+import { Download, ArrowRepeat } from 'react-bootstrap-icons';
 import { transformUsersWithSkillsResponse } from '../../utils';
 import Login from '../Login';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
-import { Box } from '@mui/material';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
+import { MRT_TablePagination } from 'material-react-table';
+import { useMediaQuery } from '@mui/material';
 
 const UsersBySkill = () => {
   const { usersInfo, setUsersInfo, setUsername, username, apiRoute } = useContext(AppContext);
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showErrorToast, setShowErrorToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
   const [tableData, setTableData] = useState([]);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const isTabletOrMobile = useMediaQuery('(max-width:991px)');
 
   const csvConfig = mkConfig({
     fieldSeparator: ',',
@@ -32,8 +36,10 @@ const UsersBySkill = () => {
   };
   
   const handleExportData = () => {
-    const csv = generateCsv(csvConfig)(tableData);
-    download(csvConfig)(csv);
+    if (tableData && tableData.length > 0) {
+      const csv = generateCsv(csvConfig)(tableData);
+      download(csvConfig)(csv);
+    }
   };
 
   useEffect(() => {
@@ -54,27 +60,25 @@ const UsersBySkill = () => {
       setTableData(transformedData);
       setUsersInfo(response);
       setUsername(rememberUsername ? PassedUsername : '');
-      setError(null);
 
-      handleLoginSuccess();
+      handleLoginSuccess('Credentials confirmed and users by skill synced!');
     } catch (error) {
-      console.error('Error fetching users info:', error);
-      setError('Failed to fetch users info');
-      handleLoginError(error.response?.data?.message || 'Failed to fetch users info');
+      const errorMsg = error.response?.data?.error?.message || error.message || 'Failed to fetch users info';
+      handleLoginError(errorMsg);
     } finally {
       setLoading(false);
+      setShowLoginModal(false);
     }
   };
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (message) => {
     setShowLoginModal(false);
-    setToastMessage('Login successful and users info synced!');
+    setSuccessMessage(message);
     setShowSuccessToast(true);
   };
 
   const handleLoginError = (message) => {
-    console.error(message);
-    setToastMessage(message);
+    setErrorMessage(message);
     setShowErrorToast(true);
   };
 
@@ -115,63 +119,123 @@ const UsersBySkill = () => {
       grouping: [],
       pagination: { pageIndex: 0, pageSize: 20 },
     },
-    muiTableContainerProps: { sx: { maxHeight: '800px' } },
-    renderTopToolbarCustomActions: ({ table }) => (
-      <Box
-        sx={{
-          display: 'flex',
-          gap: '16px',
-          padding: '8px',
-          flexWrap: 'wrap',
-        }}
-      >
-        <Button
-          onClick={handleExportData}
-          starticon={<FileDownloadIcon />}
-        >
-          Export All Data
-        </Button>
-        <Button
-          disabled={table.getPrePaginationRowModel().rows.length === 0}
-          onClick={() =>
-            handleExportRows(table.getPrePaginationRowModel().rows)
-          }
-          starticon={<FileDownloadIcon />}
-        >
-          Export All Rows
-        </Button>
-        <Button
-          disabled={table.getRowModel().rows.length === 0}
-          onClick={() => handleExportRows(table.getRowModel().rows)}
-          starticon={<FileDownloadIcon />}
-        >
-          Export Page Rows
-        </Button>
-        <Button
-          disabled={
-            !table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()
-          }
-          onClick={() => handleExportRows(table.getSelectedRowModel().rows)}
-          starticon={<FileDownloadIcon />}
-        >
-          Export Selected Rows
-        </Button>
-      </Box>
-    ),
+    enableRowSelection: true,
+    columnFilterDisplayMode: 'popover',
+    paginationDisplayMode: 'pages',
+    positionToolbarAlertBanner: 'bottom',
+    layoutMode: 'grid',
+    renderTopToolbarCustomActions: ({ table }) => {
+      const isDataAvailable = tableData && tableData.length > 0;
+      return (
+        <ButtonGroup vertical={isTabletOrMobile}>
+          <Button
+            variant="link"
+            className="icon-link icon-link-hover"
+            style={{ '--bs-icon-link-transform': 'translate3d(0, -.125rem, 0)' }}
+            onClick={handleExportData}
+            disabled={!isDataAvailable}
+          >
+            <Download className="bi" aria-hidden="true" />
+            {isTabletOrMobile ? 'All' : 'Export All Data'}
+          </Button>
+          <Button
+            variant="link"
+            className="icon-link icon-link-hover"
+            style={{ '--bs-icon-link-transform': 'translate3d(0, -.125rem, 0)' }}
+            disabled={table.getPrePaginationRowModel().rows.length === 0}
+            onClick={() => handleExportRows(table.getPrePaginationRowModel().rows)}
+          >
+            <Download className="bi" aria-hidden="true" />
+            {isTabletOrMobile ? 'All Rows' : 'Export All Rows'}
+          </Button>
+          <Button
+            variant="link"
+            className="icon-link icon-link-hover"
+            style={{ '--bs-icon-link-transform': 'translate3d(0, -.125rem, 0)' }}
+            disabled={table.getRowModel().rows.length === 0}
+            onClick={() => handleExportRows(table.getRowModel().rows)}
+          >
+            <Download className="bi" aria-hidden="true" />
+            {isTabletOrMobile ? 'Page' : 'Export Page Rows'}
+          </Button>
+          <Button
+            variant="link"
+            className="icon-link icon-link-hover"
+            style={{ '--bs-icon-link-transform': 'translate3d(0, -.125rem, 0)' }}
+            disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
+            onClick={() => handleExportRows(table.getSelectedRowModel().rows)}
+          >
+            <Download className="bi" aria-hidden="true" />
+            {isTabletOrMobile ? 'Selected' : 'Export Selected Rows'}
+          </Button>
+        </ButtonGroup>
+      );
+    },
+    muiTableContainerProps: {
+      sx: { maxHeight: '800px' },
+    },
+    renderBottomToolbar: ({ table }) => {
+      const selectedRows = table.getSelectedRowModel().rows;
+      return (
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '1rem', 
+          padding: '1rem',
+          alignItems: 'center'
+        }}>
+          <MRT_TablePagination table={table} />
+          {table.getPrePaginationRowModel().rows.length > 0 && (
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: isTabletOrMobile ? 'column' : 'row',
+              justifyContent: 'space-between', 
+              alignItems: isTabletOrMobile ? 'flex-start' : 'center',
+              width: '100%',
+              gap: isTabletOrMobile ? '0.5rem' : '0'
+            }}>
+              <span>{`${selectedRows.length} row(s) selected`}</span>
+              {selectedRows.length > 0 && (
+                <Button variant="outline-secondary" size="sm" onClick={() => table.resetRowSelection()}>
+                  Clear Selection
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    },
+    enableRowSelectionToolbar: false,
+    muiTableBodyCellProps: {
+      sx: {
+        wordBreak: 'break-word',
+      },
+    },
+    muiTableHeadCellProps: {
+      sx: {
+        wordBreak: 'break-word',
+      },
+    },
   });
 
   return (
-    <Container>
+    <Container fluid={isTabletOrMobile}>
       <Row className="align-items-center mb-3">
-        <Col xs={12} sm={6}>
-          <h1>Users By Skill</h1>
-        </Col>
-        <Col xs={12} sm={6} className="text-right">
-          <Button onClick={() => setShowLoginModal(true)}>Sync Users Info</Button>
+        <Col>
+          <div className="d-flex align-items-center">
+            <h1 className="me-3 mb-0">Users By Skill</h1>
+            <Button 
+              variant="outline-primary" 
+              onClick={() => setShowLoginModal(true)}
+              className="d-flex align-items-center justify-content-center"
+              style={{ width: '40px', height: '40px', borderRadius: '50%' }}
+            >
+              <ArrowRepeat size={20} />
+            </Button>
+          </div>
         </Col>
       </Row>
-      {error && <p>{error}</p>}
-      <div className='table-container' style={{ marginBottom: '5rem' }}>
+      <div className='table-container' style={{marginBottom: '5rem'}}>
         <MaterialReactTable table={table} />
       </div>
 
@@ -188,33 +252,33 @@ const UsersBySkill = () => {
         </Modal.Body>
       </Modal>
 
-      <Toast
-        onClose={() => setShowSuccessToast(false)}
-        show={showSuccessToast}
-        delay={3000}
-        autohide
-        bg="success"
-        style={{ position: 'fixed', top: 20, right: 20, zIndex: 1050 }}
-      >
-        <Toast.Header>
-          <strong className="me-auto">Success</strong>
-        </Toast.Header>
-        <Toast.Body style={{color: 'white'}}>{toastMessage}</Toast.Body>
-      </Toast>
+      <div className="toast-container position-fixed" style={{ top: 20, right: 20, zIndex: 1050 }}>
+        <Toast
+          onClose={() => setShowSuccessToast(false)}
+          show={showSuccessToast}
+          delay={3000}
+          autohide={false}
+          bg="success"
+        >
+          <Toast.Header>
+            <strong className="me-auto">Success</strong>
+          </Toast.Header>
+          <Toast.Body style={{ color: 'white' }}>{successMessage}</Toast.Body>
+        </Toast>
 
-      <Toast
-        onClose={() => setShowErrorToast(false)}
-        show={showErrorToast}
-        delay={3000}
-        autohide
-        bg="danger"
-        style={{ position: 'fixed', top: 20, right: 20, zIndex: 1050 }}
-      >
-        <Toast.Header>
-          <strong className="me-auto">Error</strong>
-        </Toast.Header>
-        <Toast.Body>{toastMessage}</Toast.Body>
-      </Toast>
+        <Toast
+          onClose={() => setShowErrorToast(false)}
+          show={showErrorToast}
+          delay={3000}
+          autohide={false}
+          bg="danger"
+        >
+          <Toast.Header>
+            <strong className="me-auto">Error</strong>
+          </Toast.Header>
+          <Toast.Body>{errorMessage}</Toast.Body>
+        </Toast>
+      </div>
     </Container>
   );
 };
