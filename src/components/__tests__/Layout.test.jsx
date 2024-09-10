@@ -2,15 +2,17 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import Layout from '../Layout';
 
-// Mock the NavbarComponent
-jest.mock('../Navbar', () => () => <div>Mocked Navbar</div>);
+jest.mock('../Navbar', () => () => <div data-testid="mock-navbar">Mocked Navbar</div>);
 
-test('renders layout with children', () => {
-  render(<Layout><div>Test Child</div></Layout>);
-  expect(screen.getByText('Test Child')).toBeInTheDocument();
-});
+describe('Layout Component', () => {
+  test('renders NavbarComponent and children', () => {
+    render(
+      <Layout>
+        <div data-testid="child-content">Test Child Content</div>
+      </Layout>
+    );
 
-test('renders NavbarComponent', () => {
-  render(<Layout><div>Test Child</div></Layout>);
-  expect(screen.getByText('Mocked Navbar')).toBeInTheDocument();
+    expect(screen.getByTestId('mock-navbar')).toBeInTheDocument();
+    expect(screen.getByTestId('child-content')).toBeInTheDocument();
+  });
 });

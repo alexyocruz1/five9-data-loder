@@ -1,47 +1,62 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import Container from 'react-bootstrap/Container';
-import Nav from 'react-bootstrap/Nav';
-import Navbar from 'react-bootstrap/Navbar';
-import NavDropdown from 'react-bootstrap/NavDropdown';
+import { Link, useLocation } from 'react-router-dom';
+import { Navbar, Nav, Container, NavDropdown, Image } from 'react-bootstrap';
+import { House, People, PersonGear, Tools } from 'react-bootstrap-icons';
 
 const NavbarComponent = () => {
   const [expanded, setExpanded] = useState(false);
+  const location = useLocation();
 
-  const handleToggle = () => setExpanded(!expanded);
   const handleClose = () => setExpanded(false);
 
+  const isActive = (path) => location.pathname === path;
+
   return (
-    <Navbar bg="light" variant="light" expand="lg" fixed="top" expanded={expanded}>
-      <Container>
-        <Navbar.Brand as={Link} to="/" onClick={handleClose}>
-            <img
-              alt="Data Transfer"
-              src="exchange.svg"
-              width="40"
-              height="30"
-              className="d-inline-block align-top"
-            />{' '}
-          Five9 Dataloader</Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" onClick={handleToggle} />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="me-auto">
-            <Nav.Link as={Link} to="/" onClick={handleClose}>Home</Nav.Link>
-            <NavDropdown title="Contacts" id="basic-nav-dropdown">
-              <NavDropdown.Divider />
-              <NavDropdown.Item as={Link} to="/contacts" onClick={handleClose}>Get all contacts</NavDropdown.Item>
+    <Navbar bg="light" variant="light" expand="lg" fixed="top" expanded={expanded} className="shadow-sm">
+      <Container fluid>
+        <Navbar.Brand as={Link} to="/" onClick={handleClose} className="d-flex align-items-center">
+          <Image
+            alt="Data Transfer"
+            src="exchange.svg"
+            width="40"
+            height="30"
+            className="d-inline-block align-top me-2"
+          />
+          <span className="font-weight-bold">Five9 Dataloader</span>
+        </Navbar.Brand>
+        <Navbar.Toggle aria-controls="basic-navbar-nav" onClick={() => setExpanded(!expanded)} />
+        <Navbar.Collapse id="basic-navbar-nav" data-testid="navbar-collapse">
+          <Nav className="ms-auto">
+            <Nav.Link as={Link} to="/" onClick={handleClose} active={isActive('/')}>
+              <House className="me-1" /> Home
+            </Nav.Link>
+            <NavDropdown title={<><People className="me-1" /> Contacts</>} id="contacts-dropdown">
+              <NavDropdown.Item as={Link} to="/contacts" onClick={handleClose} active={isActive('/contacts')}>
+                Get all contacts
+              </NavDropdown.Item>
             </NavDropdown>
-            <NavDropdown title="Users" id="basic-nav-dropdown">
-              <NavDropdown.Item as={Link} to="/create-user-info" onClick={handleClose}>Create users general info</NavDropdown.Item>
-              <NavDropdown.Item as={Link} to="/update-user-info" onClick={handleClose}>Update users general info</NavDropdown.Item>
-              <NavDropdown.Item as={Link} to="/remove-user-info" onClick={handleClose}>Remove users</NavDropdown.Item>
+            <NavDropdown title={<><PersonGear className="me-1" /> Users</>} id="users-dropdown">
+              <NavDropdown.Item as={Link} to="/create-user-info" onClick={handleClose} active={isActive('/create-user-info')}>
+                Create users
+              </NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/update-user-info" onClick={handleClose} active={isActive('/update-user-info')}>
+                Update users
+              </NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/remove-user-info" onClick={handleClose} active={isActive('/remove-user-info')}>
+                Remove users
+              </NavDropdown.Item>
               <NavDropdown.Divider />
-              <NavDropdown.Item as={Link} to="/users-general-info" onClick={handleClose}>Get users general info</NavDropdown.Item>
-              <NavDropdown.Item as={Link} to="/users-by-skill" onClick={handleClose}>Get users by skill</NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/users-general-info" onClick={handleClose} active={isActive('/users-general-info')}>
+                Get users info
+              </NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/users-by-skill" onClick={handleClose} active={isActive('/users-by-skill')}>
+                Get users by skill
+              </NavDropdown.Item>
             </NavDropdown>
-            <NavDropdown title="Skills" id="basic-nav-dropdown">
-              <NavDropdown.Item as={Link} to="/add-skills-to-user" onClick={handleClose}>Add skill to user</NavDropdown.Item>
-              <NavDropdown.Divider />
+            <NavDropdown title={<><Tools className="me-1" /> Skills</>} id="skills-dropdown">
+              <NavDropdown.Item as={Link} to="/add-skills-to-user" onClick={handleClose} active={isActive('/add-skills-to-user')}>
+                Add skill to user
+              </NavDropdown.Item>
             </NavDropdown>
           </Nav>
         </Navbar.Collapse>
