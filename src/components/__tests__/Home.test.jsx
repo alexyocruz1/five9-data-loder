@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import Home from '../Home';
 
@@ -12,33 +12,55 @@ describe('Home Component', () => {
 
   test('renders the description paragraph', () => {
     render(<Home />);
-    const paragraphElement = screen.getByText(/Available endpoints and their usage can be found below./i);
+    const paragraphElement = screen.getByText(/Manage your Five9 data efficiently with our comprehensive tools./i);
     expect(paragraphElement).toBeInTheDocument();
   });
 
-  test('renders the table data', () => {
+  test('renders the Available Functions section', () => {
     render(<Home />);
-    
-    const rows = screen.getAllByRole('row');
-    
-    // Check the first row of data
-    const firstRow = within(rows[1]);
-    const functionName1 = firstRow.getByText(/Get all contacts/i);
-    const functionDescription1 = firstRow.getByText(/Fetches all contacts from the database./i);
-    const functionRequiresData1 = firstRow.getByText(/No/i);
+    const sectionHeading = screen.getByText(/Available Functions/i);
+    expect(sectionHeading).toBeInTheDocument();
+  });
 
-    expect(functionName1).toBeInTheDocument();
-    expect(functionDescription1).toBeInTheDocument();
-    expect(functionRequiresData1).toBeInTheDocument();
+  test('renders all function cards', () => {
+    render(<Home />);
+    const functionNames = [
+      'Get all contacts',
+      'Get users general info',
+      'Get users info by Skill',
+      'Create user',
+      'Update users general info',
+      'Add skills to user',
+      'Remove user'
+    ];
 
-    // Check the second row of data
-    const secondRow = within(rows[2]);
-    const functionName2 = secondRow.getByText(/Get users general info/i);
-    const functionDescription2 = secondRow.getByText(/Fetches all users general info./i);
-    const functionRequiresData2 = secondRow.getByText(/No/i);
+    functionNames.forEach(name => {
+      const cardTitle = screen.getByText(name);
+      expect(cardTitle).toBeInTheDocument();
+    });
+  });
 
-    expect(functionName2).toBeInTheDocument();
-    expect(functionDescription2).toBeInTheDocument();
-    expect(functionRequiresData2).toBeInTheDocument();
+  test('renders badges for data requirements', () => {
+    render(<Home />);
+    const requiresDataBadges = screen.getAllByText('Requires Data');
+    const noDataRequiredBadges = screen.getAllByText('No Data Required');
+
+    expect(requiresDataBadges.length).toBeGreaterThan(0);
+    expect(noDataRequiredBadges.length).toBeGreaterThan(0);
+  });
+
+  test('renders the Pending Patches section', () => {
+    render(<Home />);
+    const sectionHeading = screen.getByText(/Pending Patches/i);
+    expect(sectionHeading).toBeInTheDocument();
+  });
+
+  test('renders the pending patch', () => {
+    render(<Home />);
+    const patchTitle = screen.getByText('Remember username');
+    expect(patchTitle).toBeInTheDocument();
+
+    const patchDescription = screen.getByText(/The username is not being stored nor remembered/i);
+    expect(patchDescription).toBeInTheDocument();
   });
 });
