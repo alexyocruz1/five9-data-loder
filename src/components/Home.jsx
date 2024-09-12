@@ -1,5 +1,5 @@
 import React from 'react';
-import { Container, Row, Col, Card, ListGroup, Badge, Accordion } from 'react-bootstrap';
+import { Container, Row, Col, Card, Badge, Accordion } from 'react-bootstrap';
 import { PersonPlus, ArrowClockwise, PersonX, Tools, ExclamationTriangle } from 'react-bootstrap-icons';
 
 const Home = () => {
