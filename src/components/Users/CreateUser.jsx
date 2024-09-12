@@ -55,6 +55,14 @@ const RolesModal = ({ showRolesModal, setShowRolesModal, availableRoles, rolePer
                       onChange={(e) => handleRolePermissionChange(role, 'attachVmToEmail', e.target.checked)}
                       className="mb-2"
                     />
+                    <Form.Check
+                      type="checkbox"
+                      id={`${role}-sendEmailOnVm`}
+                      label="Send Email on VM"
+                      checked={rolePermissions[role]?.sendEmailOnVm ?? false}
+                      onChange={(e) => handleRolePermissionChange(role, 'sendEmailOnVm', e.target.checked)}
+                      className="mb-2"
+                    />
                   </>
                 )}
                 {filteredPermissions(availableRoles[role].permissions, searchTerm).map(permission => (
@@ -124,12 +132,14 @@ const CreateUser = () => {
       const cleanedRole = {
         ...(roleData.alwaysRecorded !== undefined ? { alwaysRecorded: roleData.alwaysRecorded } : {}),
         ...(roleData.attachVmToEmail !== undefined ? { attachVmToEmail: roleData.attachVmToEmail } : {}),
+        ...(roleData.sendEmailOnVm !== undefined ? { sendEmailOnVm: roleData.sendEmailOnVm } : {}),
         permissions: roleData.permissions.filter(p => p.value).map(({ type, value }) => ({ type, value }))
       };
 
       if (cleanedRole.permissions.length > 0 || 
           cleanedRole.alwaysRecorded || 
-          cleanedRole.attachVmToEmail) {
+          cleanedRole.attachVmToEmail || 
+          cleanedRole.sendEmailOnVm) {
         acc[roleName] = cleanedRole;
       }
 
@@ -373,7 +383,7 @@ const CreateUser = () => {
       ...prev,
       [role]: {
         ...prev[role],
-        ...(permissionType === 'alwaysRecorded' || permissionType === 'attachVmToEmail'
+        ...(permissionType === 'alwaysRecorded' || permissionType === 'attachVmToEmail' || permissionType === 'sendEmailOnVm'
           ? { [permissionType]: checked }
           : {
               permissions: prev[role].permissions.map(p =>
@@ -404,6 +414,7 @@ const CreateUser = () => {
         ...(role === 'agent' ? {
           alwaysRecorded: roles[role].alwaysRecorded,
           attachVmToEmail: roles[role].attachVmToEmail,
+          sendEmailOnVm: roles[role].sendEmailOnVm,
         } : {}),
         permissions: roles[role].permissions.map(p => ({ ...p }))
       };
@@ -606,7 +617,7 @@ const CreateUser = () => {
                 Roles with at least one permission set to true will be assigned to the users.
               </Card.Text>
               <Card.Text>
-                The agent role has additional options: "Always Recorded" and "Attach VM to Email".
+                The agent role has additional options: "Always Recorded", "Attach VM to Email", and "Send Email on VM".
               </Card.Text>
             </Card.Body>
           </Card>

@@ -106,6 +106,7 @@ export const availableRoles = {
   agent: {
     alwaysRecorded: false,
     attachVmToEmail: false,
+    sendEmailOnVm: false,
     permissions: [
       { type: "ReceiveTransfer", label: "Receive Transfer", value: true },
       { type: "MakeRecordings", label: "Make Recordings", value: false },
