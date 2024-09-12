@@ -55,7 +55,6 @@ const NavbarComponent = () => {
             </NavDropdown>
             <NavDropdown title={<><Tools className="me-1" /> Skills</>} id="skills-dropdown" align="end">
               <NavDropdown.Item as={Link} to="/add-skills-to-user" onClick={handleClose} active={isActive('/add-skills-to-user')}>
-                <PlusCircle className="me-2" />
                 <span className="d-inline-block text-truncate" style={{maxWidth: '150px'}}>Add skill to user</span>
               </NavDropdown.Item>
             </NavDropdown>
