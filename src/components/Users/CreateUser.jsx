@@ -1,14 +1,95 @@
-import React, { useState, useContext, useMemo, useRef } from 'react';
+import React, { useState, useContext, useMemo, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { AppContext } from '../../context/AppContext';
-import { Button, Modal, Container, Row, Col, Toast, Offcanvas, ListGroup, ProgressBar, Card } from 'react-bootstrap';
+import { Button, Modal, Container, Row, Col, Toast, Offcanvas, ListGroup, ProgressBar, Card, Form, Tabs, Tab, InputGroup, FormControl } from 'react-bootstrap';
 import Login from '../Login';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 import Papa from 'papaparse';
-import { roles } from '../../utils';
-import { Upload, PersonPlus, QuestionCircle, Download } from 'react-bootstrap-icons';
+import { getRoles } from '../../utils';
+import { Upload, PersonPlus, QuestionCircle, Download, Check, X, PeopleFill, Search } from 'react-bootstrap-icons';
 import { MRT_TablePagination } from 'material-react-table';
 import { useMediaQuery } from '@mui/material';
+
+const filteredPermissions = (permissions, searchTerm) => {
+  return permissions.filter(permission => 
+    permission.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+};
+
+const RolesModal = ({ showRolesModal, setShowRolesModal, availableRoles, rolePermissions, handleRolePermissionChange, applyRolesToUsers, searchTerm, activeTab, setActiveTab, setSearchTerm }) => {
+  const modalContent = useMemo(() => (
+    <Modal show={showRolesModal} onHide={() => setShowRolesModal(false)} size="lg">
+      <Modal.Header closeButton>
+        <Modal.Title>Set Roles and Permissions</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <InputGroup className="mb-3">
+          <InputGroup.Text>
+            <Search />
+          </InputGroup.Text>
+          <FormControl
+            placeholder="Search permissions..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </InputGroup>
+        <Tabs activeKey={activeTab} onSelect={setActiveTab} className="mb-3">
+          {Object.keys(availableRoles).map(role => (
+            <Tab eventKey={role} title={role.charAt(0).toUpperCase() + role.slice(1)} key={role}>
+              <div style={{ maxHeight: '400px', overflowY: 'auto', paddingLeft: '10px' }}>
+                {role === 'agent' && (
+                  <>
+                    <Form.Check
+                      type="checkbox"
+                      id={`${role}-alwaysRecorded`}
+                      label="Always Recorded"
+                      checked={rolePermissions[role]?.alwaysRecorded ?? false}
+                      onChange={(e) => handleRolePermissionChange(role, 'alwaysRecorded', e.target.checked)}
+                      className="mb-2"
+                    />
+                    <Form.Check
+                      type="checkbox"
+                      id={`${role}-attachVmToEmail`}
+                      label="Attach VM to Email"
+                      checked={rolePermissions[role]?.attachVmToEmail ?? false}
+                      onChange={(e) => handleRolePermissionChange(role, 'attachVmToEmail', e.target.checked)}
+                      className="mb-2"
+                    />
+                    <Form.Check
+                      type="checkbox"
+                      id={`${role}-sendEmailOnVm`}
+                      label="Send Email on VM"
+                      checked={rolePermissions[role]?.sendEmailOnVm ?? false}
+                      onChange={(e) => handleRolePermissionChange(role, 'sendEmailOnVm', e.target.checked)}
+                      className="mb-2"
+                    />
+                  </>
+                )}
+                {filteredPermissions(availableRoles[role].permissions, searchTerm).map(permission => (
+                  <Form.Check
+                    key={permission.type}
+                    type="checkbox"
+                    id={`${role}-${permission.type}`}
+                    label={permission.label}
+                    checked={rolePermissions[role]?.permissions?.find(p => p.type === permission.type)?.value ?? false}
+                    onChange={(e) => handleRolePermissionChange(role, permission.type, e.target.checked)}
+                    className="mb-2"
+                  />
+                ))}
+              </div>
+            </Tab>
+          ))}
+        </Tabs>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={() => setShowRolesModal(false)}>Close</Button>
+        <Button variant="primary" onClick={applyRolesToUsers}>Apply Roles</Button>
+      </Modal.Footer>
+    </Modal>
+  ), [showRolesModal, availableRoles, rolePermissions, handleRolePermissionChange, applyRolesToUsers, searchTerm, activeTab, setActiveTab, setSearchTerm, setShowRolesModal]);
+
+  return modalContent;
+};
 
 const CreateUser = () => {
   const { setUsername, username, apiRoute } = useContext(AppContext);
@@ -31,10 +112,40 @@ const CreateUser = () => {
   const [failedUsers, setFailedUsers] = useState([]);
   const isTabletOrMobile = useMediaQuery('(max-width:991px)');
   const fileInputRef = useRef(null);
+  const [availableRoles, setAvailableRoles] = useState({});
+  const [showRolesModal, setShowRolesModal] = useState(false);
+  const [rowSelection, setRowSelection] = useState({});
+  const [rolePermissions, setRolePermissions] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState(Object.keys(availableRoles)[0]);
+
+  useEffect(() => {
+    setAvailableRoles(getRoles());
+  }, []);
 
   const permittedColumns = [
     'userName', 'password', 'firstName', 'lastName', 'EMail'
   ];
+
+  const cleanRoles = (roles) => {
+    return Object.entries(roles).reduce((acc, [roleName, roleData]) => {
+      const cleanedRole = {
+        ...(roleData.alwaysRecorded !== undefined ? { alwaysRecorded: roleData.alwaysRecorded } : {}),
+        ...(roleData.attachVmToEmail !== undefined ? { attachVmToEmail: roleData.attachVmToEmail } : {}),
+        ...(roleData.sendEmailOnVm !== undefined ? { sendEmailOnVm: roleData.sendEmailOnVm } : {}),
+        permissions: roleData.permissions.filter(p => p.value).map(({ type, value }) => ({ type, value }))
+      };
+
+      if (cleanedRole.permissions.length > 0 || 
+          cleanedRole.alwaysRecorded || 
+          cleanedRole.attachVmToEmail || 
+          cleanedRole.sendEmailOnVm) {
+        acc[roleName] = cleanedRole;
+      }
+
+      return acc;
+    }, {});
+  };
 
   const createUserInfo = async (PassedUsername, PassedPassword, rememberUsername, users) => {
     setLoading(true);
@@ -48,12 +159,19 @@ const CreateUser = () => {
       for (let i = 0; i < users.length; i++) {
         setCurrentUser(users[i].userName);
         try {
-          let userToCreate = {}
-          userToCreate.generalInfo = users[i];
-          userToCreate.skills = [];
-          userToCreate.agentGroups = [];
-          userToCreate.roles = roles;
-          userToCreate.cannedReports = [];
+          let userToCreate = {
+            generalInfo: { ...users[i] },
+            skills: [],
+            agentGroups: [],
+            roles: cleanRoles(users[i].roles || getRoles()),
+            cannedReports: []
+          };
+          
+          delete userToCreate.generalInfo.roles;
+
+          if (Object.keys(userToCreate.roles).length === 0) {
+            userToCreate.roles = {};
+          }
 
           await axios.post(`${apiRoute}/api/users/createUser/`, {
             username: PassedUsername,
@@ -125,11 +243,15 @@ const CreateUser = () => {
 
   const columns = useMemo(() => {
     if (csvData && csvData.length > 0) {
-      return Object.keys(csvData[0]).map((key) => ({
-        accessorKey: key,
-        header: key.replace(/_/g, ' ').toUpperCase(),
-        Cell: typeof csvData[0][key] === 'boolean' ? booleanCellRenderer : undefined,
-      }));
+      return Object.keys(csvData[0])
+        .filter(key => key !== 'roles')
+        .map((key) => ({
+          accessorKey: key,
+          header: key.replace(/_/g, ' ').toUpperCase(),
+          Cell: ({ cell }) => {
+            return typeof cell.getValue() === 'boolean' ? booleanCellRenderer({ cell }) : cell.getValue();
+          },
+        }));
     }
     return [];
   }, [csvData]);
@@ -137,11 +259,34 @@ const CreateUser = () => {
   const table = useMaterialReactTable({
     columns,
     data: csvData || [],
-    enableRowSelection: false,
-    columnFilterDisplayMode: 'popover',
-    paginationDisplayMode: 'pages',
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    state: { rowSelection },
+    getRowId: (row) => row.userName,
+    enableSelectAll: true,
     positionToolbarAlertBanner: 'bottom',
-    renderTopToolbarCustomActions: () => null,
+    renderTopToolbarCustomActions: ({ table }) => (
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <Button
+          onClick={() => table.toggleAllRowsSelected()}
+          variant="outline-secondary"
+          size="sm"
+          title={table.getIsAllRowsSelected() ? 'Deselect All' : 'Select All'}
+        >
+          {table.getIsAllRowsSelected() ? <X size={18} /> : <Check size={18} />}
+        </Button>
+        <Button 
+          onClick={openRolesModal} 
+          variant="outline-primary"
+          size="sm"
+          disabled={table.getSelectedRowModel().rows.length === 0}
+          title="Set Roles for Selected Users"
+        >
+          <PeopleFill size={18} className="me-1" />
+          Set Roles ({table.getSelectedRowModel().rows.length})
+        </Button>
+      </div>
+    ),
     renderBottomToolbar: ({ table }) => {
       return (
         <div style={{ 
@@ -224,6 +369,59 @@ const CreateUser = () => {
     setShowLoginModal(true);
   };
 
+  const openRolesModal = useCallback(() => {
+    const selectedUsers = csvData.filter(user => rowSelection[user.userName]);
+    const initialRoles = selectedUsers.length === 1 
+      ? selectedUsers[0].roles || initializeRoles(availableRoles)
+      : initializeRoles(availableRoles);
+    setRolePermissions(initialRoles);
+    setShowRolesModal(true);
+  }, [csvData, rowSelection, availableRoles]);
+
+  const handleRolePermissionChange = useCallback((role, permissionType, checked) => {
+    setRolePermissions(prev => ({
+      ...prev,
+      [role]: {
+        ...prev[role],
+        ...(permissionType === 'alwaysRecorded' || permissionType === 'attachVmToEmail' || permissionType === 'sendEmailOnVm'
+          ? { [permissionType]: checked }
+          : {
+              permissions: prev[role].permissions.map(p =>
+                p.type === permissionType ? { ...p, value: checked } : p
+              )
+            }
+        )
+      }
+    }));
+  }, []);
+
+  const applyRolesToUsers = useCallback(() => {
+    const cleanedRoles = cleanRoles(rolePermissions);
+    const updatedCsvData = csvData.map(user => {
+      if (rowSelection[user.userName]) {
+        return { ...user, roles: cleanedRoles };
+      }
+      return user;
+    });
+    setCsvData(updatedCsvData);
+    setShowRolesModal(false);
+    setRowSelection({});
+  }, [csvData, rowSelection, rolePermissions]);
+
+  const initializeRoles = (roles) => {
+    return Object.keys(roles).reduce((acc, role) => {
+      acc[role] = {
+        ...(role === 'agent' ? {
+          alwaysRecorded: roles[role].alwaysRecorded,
+          attachVmToEmail: roles[role].attachVmToEmail,
+          sendEmailOnVm: roles[role].sendEmailOnVm,
+        } : {}),
+        permissions: roles[role].permissions.map(p => ({ ...p }))
+      };
+      return acc;
+    }, {});
+  };
+
   return (
     <Container fluid={isTabletOrMobile}>
       <Row className="align-items-center mb-3">
@@ -265,11 +463,7 @@ const CreateUser = () => {
         <MaterialReactTable table={table} />
       </div>
 
-      <Modal
-        show={showLoginModal}
-        onHide={() => setShowLoginModal(false)}
-        centered
-      >
+      <Modal show={showLoginModal} onHide={() => setShowLoginModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Credentials</Modal.Title>
         </Modal.Header>
@@ -277,6 +471,19 @@ const CreateUser = () => {
         <Login username={username} endpoint={(username, password, rememberUsername) => createUserInfo(username, password, rememberUsername, csvData)} loading={loading} />
         </Modal.Body>
       </Modal>
+
+      <RolesModal 
+        showRolesModal={showRolesModal}
+        setShowRolesModal={setShowRolesModal}
+        availableRoles={availableRoles}
+        rolePermissions={rolePermissions}
+        handleRolePermissionChange={handleRolePermissionChange}
+        applyRolesToUsers={applyRolesToUsers}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
 
       <Modal
         show={showProgressModal}
@@ -398,10 +605,28 @@ const CreateUser = () => {
           </Card>
 
           <Card className="mb-3">
-            <Card.Header as="h5">Step 3: Create Users</Card.Header>
+            <Card.Header as="h5">Step 3: Set Roles and Permissions</Card.Header>
             <Card.Body>
               <Card.Text>
-                After importing, review the data in the table.
+                After importing, you can set roles and permissions for selected users.
+              </Card.Text>
+              <Card.Text>
+                Select users in the table and click "Set Roles" to open the roles modal.
+              </Card.Text>
+              <Card.Text>
+                Roles with at least one permission set to true will be assigned to the users.
+              </Card.Text>
+              <Card.Text>
+                The agent role has additional options: "Always Recorded", "Attach VM to Email", and "Send Email on VM".
+              </Card.Text>
+            </Card.Body>
+          </Card>
+
+          <Card className="mb-3">
+            <Card.Header as="h5">Step 4: Create Users</Card.Header>
+            <Card.Body>
+              <Card.Text>
+                Review the data in the table, including roles and permissions.
               </Card.Text>
               <Card.Text>
                 Click "Create Users" to begin the user creation process.
@@ -413,7 +638,7 @@ const CreateUser = () => {
           </Card>
 
           <Card>
-            <Card.Header as="h5">Step 4: Review Results</Card.Header>
+            <Card.Header as="h5">Step 5: Review Results</Card.Header>
             <Card.Body>
               <Card.Text>
                 After the process completes, you'll see a summary of successful and failed user creations.

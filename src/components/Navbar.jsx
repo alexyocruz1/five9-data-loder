@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Navbar, Nav, Container, NavDropdown, Image } from 'react-bootstrap';
-import { House, People, PersonGear, Tools } from 'react-bootstrap-icons';
+import { House, People, PersonGear, Tools, PlusCircle } from 'react-bootstrap-icons';
 
 const NavbarComponent = () => {
   const [expanded, setExpanded] = useState(false);
@@ -26,7 +26,7 @@ const NavbarComponent = () => {
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" onClick={() => setExpanded(!expanded)} />
         <Navbar.Collapse id="basic-navbar-nav" data-testid="navbar-collapse">
-          <Nav className="ms-auto">
+          <Nav className="ms-auto flex-wrap">
             <Nav.Link as={Link} to="/" onClick={handleClose} active={isActive('/')}>
               <House className="me-1" /> Home
             </Nav.Link>
@@ -53,9 +53,9 @@ const NavbarComponent = () => {
                 Get users by skill
               </NavDropdown.Item>
             </NavDropdown>
-            <NavDropdown title={<><Tools className="me-1" /> Skills</>} id="skills-dropdown">
+            <NavDropdown title={<><Tools className="me-1" /> Skills</>} id="skills-dropdown" align="end">
               <NavDropdown.Item as={Link} to="/add-skills-to-user" onClick={handleClose} active={isActive('/add-skills-to-user')}>
-                Add skill to user
+                <span className="d-inline-block text-truncate" style={{maxWidth: '150px'}}>Add skill to user</span>
               </NavDropdown.Item>
             </NavDropdown>
           </Nav>
