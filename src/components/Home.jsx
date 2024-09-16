@@ -1,6 +1,6 @@
 import React from 'react';
 import { Container, Row, Col, Card, Badge, Accordion } from 'react-bootstrap';
-import { PersonPlus, ArrowClockwise, PersonX, Tools, ExclamationTriangle } from 'react-bootstrap-icons';
+import { PersonPlus, ArrowClockwise, PersonX, Tools, ExclamationTriangle, List } from 'react-bootstrap-icons';
 
 const Home = () => {
   const functions = [
@@ -45,6 +45,12 @@ const Home = () => {
       description: 'Remove existing users from five9.',
       requiresData: true,
       icon: <PersonX />,
+    },
+    {
+      name: 'General Skills',
+      description: 'View and manage general skills in the system.',
+      requiresData: false,
+      icon: <List />,
     }
   ];
 
