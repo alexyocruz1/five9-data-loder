@@ -57,6 +57,9 @@ const NavbarComponent = () => {
               <NavDropdown.Item as={Link} to="/add-skills-to-user" onClick={handleClose} active={isActive('/add-skills-to-user')}>
                 <span className="d-inline-block text-truncate" style={{maxWidth: '150px'}}>Add skill to user</span>
               </NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/general-skills" onClick={handleClose} active={isActive('/general-skills')}>
+                <span className="d-inline-block text-truncate" style={{maxWidth: '150px'}}>General Skills</span>
+              </NavDropdown.Item>
             </NavDropdown>
           </Nav>
         </Navbar.Collapse>
