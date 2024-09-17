@@ -15,6 +15,7 @@ import RemoveUser from './components/Users/RemoveUser';
 
 // Skills
 import AddSkillUser from './components/Skills/AddSkillUser';
+import GeneralSkills from './components/Skills/GeneralSkills';
 
 // Other
 import Home from './components/Home';
@@ -38,6 +39,7 @@ const App = () => {
             <Route path="/remove-user-info" element={<RemoveUser />} />
 
             <Route path="/add-skills-to-user" element={<AddSkillUser />} />
+            <Route path="/general-skills" element={<GeneralSkills />} />
           </Routes>
         </Layout>
       </Router>
