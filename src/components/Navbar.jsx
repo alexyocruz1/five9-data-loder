@@ -17,8 +17,8 @@ const NavbarComponent = () => {
         <Navbar.Brand as={Link} to="/" onClick={handleClose} className="d-flex align-items-center">
           <Image
             alt="Data Transfer"
-            src="exchange.svg"
-            width="40"
+            src="sync.png"
+            width="30"
             height="30"
             className="d-inline-block align-top me-2"
           />
