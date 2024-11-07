@@ -371,9 +371,41 @@ const CreateUser = () => {
 
   const openRolesModal = useCallback(() => {
     const selectedUsers = csvData.filter(user => rowSelection[user.userName]);
-    const initialRoles = selectedUsers.length === 1 
-      ? selectedUsers[0].roles || initializeRoles(availableRoles)
+    
+    // Check if any selected users have existing roles
+    const existingRoles = selectedUsers.reduce((acc, user) => {
+      if (user.roles) {
+        Object.entries(user.roles).forEach(([roleName, roleData]) => {
+          if (!acc[roleName]) {
+            acc[roleName] = roleData;
+          } else {
+            // Merge permissions if they exist
+            if (roleData.permissions) {
+              acc[roleName].permissions = acc[roleName].permissions.map(existingPerm => {
+                const matchingPerm = roleData.permissions.find(p => p.type === existingPerm.type);
+                return {
+                  ...existingPerm,
+                  value: matchingPerm ? matchingPerm.value : existingPerm.value
+                };
+              });
+            }
+            // Merge other role properties
+            ['alwaysRecorded', 'attachVmToEmail', 'sendEmailOnVm'].forEach(prop => {
+              if (roleData[prop] !== undefined) {
+                acc[roleName][prop] = roleData[prop];
+              }
+            });
+          }
+        });
+      }
+      return acc;
+    }, {});
+
+    // If there are existing roles with permissions, use them; otherwise use default roles
+    const initialRoles = Object.keys(existingRoles).length > 0 
+      ? existingRoles 
       : initializeRoles(availableRoles);
+
     setRolePermissions(initialRoles);
     setShowRolesModal(true);
   }, [csvData, rowSelection, availableRoles]);
@@ -409,14 +441,10 @@ const CreateUser = () => {
   }, [csvData, rowSelection, rolePermissions]);
 
   const initializeRoles = (roles) => {
-    return Object.keys(roles).reduce((acc, role) => {
-      acc[role] = {
-        ...(role === 'agent' ? {
-          alwaysRecorded: roles[role].alwaysRecorded,
-          attachVmToEmail: roles[role].attachVmToEmail,
-          sendEmailOnVm: roles[role].sendEmailOnVm,
-        } : {}),
-        permissions: roles[role].permissions.map(p => ({ ...p }))
+    return Object.entries(roles).reduce((acc, [roleName, roleData]) => {
+      acc[roleName] = {
+        ...roleData,
+        permissions: roleData.permissions.map(perm => ({ ...perm }))
       };
       return acc;
     }, {});
